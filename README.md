@@ -25,7 +25,7 @@ Ce projet constitue cet historique, un instantané par mois, et le rend lisible.
 | Dans le jeu | En entreprise |
 |---|---|
 | Usage d'un Pokémon | Part de marché d'un produit |
-| Classement moyen des joueurs qui le choisissent | Valeur du segment client qui l'achète |
+| Adoption par les meilleurs joueurs | Adoption par le segment client le plus exigeant |
 | Coéquipiers fréquents | Produits achetés ensemble, affinités de panier |
 | Adversaires qui le mettent en difficulté | Concurrents directs |
 | Un instantané par mois | Suivi de tendance et détection de ruptures |
@@ -34,13 +34,15 @@ Ce projet constitue cet historique, un instantané par mois, et le rend lisible.
 ## Résultats du premier mois (septembre 2026)
 
 - **446 954 équipes** analysées (223 477 batailles), **341 Pokémon** joués au moins une fois.
-- **Rillaboom figure dans une équipe sur deux** (50,9 %). Le top 10 occupe
-  45,3 % des emplacements d'équipe.
-- Croiser la popularité avec le niveau des joueurs donne quatre profils :
-  **13 staples, 20 pépites, 5 pièges, 31 niches** parmi les 69 Pokémon
-  au-dessus de 1 % d'usage. Détail de la méthode : [docs/methode-quadrants.md](docs/methode-quadrants.md).
+- **Rillaboom figure dans plus d'une équipe sur deux** (54,7 % d'usage au
+  palier 1500). Le top 10 occupe 45,3 % des emplacements d'équipe.
+- Croiser la popularité avec l'adoption par l'élite (usage au palier 1760
+  rapporté à l'usage sur tout le ladder) donne quatre profils :
+  **14 staples, 15 pépites, 5 pièges, 29 niches** parmi les 63 Pokémon
+  au-dessus de 1 % d'usage. Charizard-Mega-Y est 1,78 fois plus joué par
+  l'élite que par l'ensemble du ladder. Méthode : [docs/methode-quadrants.md](docs/methode-quadrants.md).
 
-![Nuage des quadrants : usage en abscisse, classement moyen des joueurs en ordonnée](docs/img/vgc-quadrants.webp)
+![Nuage des quadrants : usage en abscisse, ratio élite / ladder en ordonnée](docs/img/vgc-quadrants.webp)
 
 ## Architecture
 
@@ -117,8 +119,8 @@ docs/               modèle de données, méthode, journal qualité
 - [x] Modèle en étoile et traçabilité des instantanés
 - [x] Automatisation mensuelle et tests
 - [x] Tableau de bord : vue d'ensemble, quadrants, fiche par Pokémon, classement
+- [x] Écart élite / reste du ladder à partir des paliers 0 et 1760
 - [ ] Évolutions mois par mois (à partir des données d'octobre, publiées le 1er novembre)
-- [ ] Écart élite / reste du ladder à partir des paliers 0 et 1760
 - [ ] Résultats de tournois pour mesurer un taux de conversion en phase finale
 - [ ] Extension à la régulation M-D
 
