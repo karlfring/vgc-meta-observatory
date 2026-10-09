@@ -48,6 +48,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "Aucune nouvelle donnée ce mois-ci."
           else
-            git commit -m "data: snapshot Smogon $(date -u +%Y-%m)"
+            git commit -m "data: snapshot Smogon $(date -u -d "$(date -u +%Y-%m-01) -1 month" +%Y-%m)"
             git push
           fi

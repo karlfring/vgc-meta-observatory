@@ -33,7 +33,7 @@ Ce projet constitue cet historique, un instantané par mois, et le rend lisible.
 
 ## Résultats du premier mois (septembre 2026)
 
-- **515 299 équipes** analysées, **259 Pokémon** joués au moins une fois.
+- **446 954 équipes** analysées (223 477 batailles), **341 Pokémon** joués au moins une fois.
 - **Rillaboom figure dans une équipe sur deux** (50,9 %). Le top 10 occupe
   45,3 % des emplacements d'équipe.
 - Croiser la popularité avec le niveau des joueurs donne quatre profils :
