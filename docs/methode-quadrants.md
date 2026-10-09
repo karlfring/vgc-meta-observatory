@@ -53,7 +53,7 @@ Exemples de septembre 2026, sur 63 Pokémon au-dessus de 1 % d'usage :
 
 ## Les mêmes règles en DAX
 
-Le modèle Power BI applique exactement ces règles : mesure `Quadrant` pour les
+Les mesures DAX prévues pour le rapport Power BI appliquent exactement ces règles : mesure `Quadrant` pour les
 tables et infobulles, colonne calculée `Quadrant (dernier snapshot)` pour la
 légende du nuage de points, car Power BI n'accepte pas une mesure comme
 légende. Voir [`powerbi/mesures.dax`](../powerbi/mesures.dax), section 3.

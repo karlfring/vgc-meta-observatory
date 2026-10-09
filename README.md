@@ -59,7 +59,7 @@ src/parsers.py    expressions régulières : usage, movesets, matchups
 src/ingest.py     modèle en étoile en CSV  ──►  data/processed/
         │
         ▼
-Power BI · tableau de bord   (mesures DAX dans powerbi/mesures.dax)
+tableau de bord   (rapport Power BI en préparation : powerbi/)
 ```
 
 Le workflow `.github/workflows/ingest.yml` s'exécute **le 2 de chaque mois** :
@@ -119,6 +119,7 @@ docs/               modèle de données, méthode, journal qualité
 - [x] Modèle en étoile et traçabilité des instantanés
 - [x] Automatisation mensuelle et tests
 - [x] Tableau de bord : vue d'ensemble, quadrants, fiche par Pokémon, classement
+- [ ] Rapport Power BI (guide de montage et mesures DAX déjà écrits)
 - [x] Écart élite / reste du ladder à partir des paliers 0 et 1760
 - [ ] Évolutions mois par mois (à partir des données d'octobre, publiées le 1er novembre)
 - [ ] Résultats de tournois pour mesurer un taux de conversion en phase finale
