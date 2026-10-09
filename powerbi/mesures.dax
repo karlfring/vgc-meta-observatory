@@ -185,34 +185,48 @@ IF(
 
 // Ratio d'adoption. Au-dessus de 1, l'élite le joue davantage.
 // Plus lisible que l'écart absolu pour les Pokémon peu joués.
+// C'est l'axe vertical des quadrants (« élite / ladder » dans le tableau de bord).
 Ratio adoption élite =
 DIVIDE( [Usage % élite], [Usage % ladder] )
+
+
+// Usage de référence : palier 1500, celui que Smogon met en avant.
+// C'est l'axe horizontal des quadrants.
+Usage % référence =
+CALCULATE(
+    [Usage %],
+    REMOVEFILTERS( dim_rating_bracket ),
+    dim_rating_bracket[palier] = 1500
+)
 
 
 // Classification en quadrants, transposition du cadre
 // Staples / Pépites / Pièges / Niche.
 //
-//  Axe horizontal : popularité (usage sur tout le ladder)
-//  Axe vertical   : validation par l'élite (écart élite / ladder)
+//  Axe horizontal : popularité (usage de référence, palier 1500)
+//  Axe vertical   : validation par l'élite (ratio élite / ladder)
 //
-//  Les seuils sont à ajuster une fois les vraies données chargées.
+//  Seuils : 10 % d'usage, et un ratio de 1 (l'élite le joue autant que
+//  l'ensemble du ladder). Ce sont les mêmes règles que dans le tableau
+//  de bord et dans docs/methode-quadrants.md.
 //
 //  ATTENTION : cette MESURE réagit aux filtres, donc elle convient
 //  pour une table, une carte ou une infobulle, mais ne peut pas servir
 //  de LÉGENDE dans un nuage de points (Power BI exige une colonne).
 //  Pour la légende, utiliser la colonne calculée définie juste après.
 Quadrant =
-VAR _Usage = [Usage % ladder]
-VAR _Ecart = [Écart élite / ladder]
-VAR _SeuilUsage = 0.15      // 15 % d'usage
-VAR _SeuilEcart = 0         // l'élite le joue plus que la moyenne
+VAR _Usage = [Usage % référence]
+VAR _Ratio = [Ratio adoption élite]
+VAR _SeuilUsage = 0.10      // 10 % d'usage
+VAR _SeuilRatio = 1         // l'élite le joue au moins autant que le ladder
 RETURN
     SWITCH(
         TRUE(),
-        ISBLANK( _Usage ) || ISBLANK( _Ecart ), "Non classé",
-        _Usage >= _SeuilUsage && _Ecart >= _SeuilEcart, "Staple",
-        _Usage <  _SeuilUsage && _Ecart >= _SeuilEcart, "Pépite",
-        _Usage >= _SeuilUsage && _Ecart <  _SeuilEcart, "Piège",
+        ISBLANK( _Usage ) || ISBLANK( _Ratio ), "Non classé",
+        _Usage < 0.01, "Non classé",            // volume trop faible
+        _Usage >= _SeuilUsage && _Ratio >= _SeuilRatio, "Staple",
+        _Usage <  _SeuilUsage && _Ratio >= _SeuilRatio, "Pépite",
+        _Usage >= _SeuilUsage && _Ratio <  _SeuilRatio, "Piège",
         "Niche"
     )
 
@@ -251,14 +265,26 @@ VAR _Elite =
         ),
         100
     )
-VAR _Ecart = _Elite - _Ladder
+VAR _Reference =
+    DIVIDE(
+        CALCULATE(
+            SUM( fact_usage[usage_pct] ),
+            ALL( fact_usage ),
+            fact_usage[pokemon] = _Pkmn,
+            fact_usage[palier] = 1500,
+            fact_usage[date_snapshot] = _DerniereDate
+        ),
+        100
+    )
+VAR _Ratio = DIVIDE( _Elite, _Ladder )
 RETURN
     SWITCH(
         TRUE(),
-        _Ladder = 0 || ISBLANK( _Ladder ), "Non classé",
-        _Ladder >= 0.15 && _Ecart >= 0, "Staple",
-        _Ladder <  0.15 && _Ecart >= 0, "Pépite",
-        _Ladder >= 0.15 && _Ecart <  0, "Piège",
+        _Ladder = 0 || ISBLANK( _Ladder ) || ISBLANK( _Reference ), "Non classé",
+        _Reference < 0.01, "Non classé",
+        _Reference >= 0.10 && _Ratio >= 1, "Staple",
+        _Reference <  0.10 && _Ratio >= 1, "Pépite",
+        _Reference >= 0.10 && _Ratio <  1, "Piège",
         "Niche"
     )
 
