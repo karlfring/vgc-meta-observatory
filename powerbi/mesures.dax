@@ -1,0 +1,436 @@
+// =====================================================================
+//  OBSERVATOIRE DU MÉTAGAME VGC CHAMPIONS
+//  Bibliothèque de mesures DAX
+//
+//  À créer dans une table de mesures dédiée (voir GUIDE.md, étape 4).
+//  Les mesures sont groupées par usage ; copie-colle bloc par bloc.
+// =====================================================================
+
+
+// ---------------------------------------------------------------------
+// 1. MESURES DE BASE
+// ---------------------------------------------------------------------
+
+// Usage d'un Pokémon sur le ladder.
+// Le CSV stocke des pourcentages (55.69655), d'où la division par 100.
+// À formater en pourcentage avec 2 décimales.
+Usage % =
+DIVIDE( SUM( fact_usage[usage_pct] ), 100 )
+
+
+// Nombre d'apparitions brutes. Utile pour juger si un usage faible
+// repose sur un échantillon suffisant.
+Apparitions =
+SUM( fact_usage[raw_count] )
+
+
+// Nombre de batailles du mois, depuis la table de traçabilité.
+// Permet d'afficher la représentativité d'un snapshot.
+Batailles du mois =
+CALCULATE(
+    SUM( fact_snapshot[total_battles] ),
+    fact_snapshot[genre] = "usage"
+)
+
+
+// Rang recalculé dynamiquement selon les filtres actifs.
+// Préférer cette mesure à la colonne [rang] dès qu'un filtre
+// (type, forme, mega) restreint la population affichée.
+Rang =
+IF(
+    NOT ISBLANK( [Usage %] ),
+    RANKX(
+        ALLSELECTED( dim_pokemon[pokemon] ),
+        [Usage %],
+        ,
+        DESC,
+        DENSE
+    )
+)
+
+
+// Plafond de viabilité : classement le plus élevé atteint par un
+// joueur utilisant ce Pokémon. Proxy de performance en haut de ladder.
+Viability ceiling =
+MAX( fact_moveset[viability_ceiling] )
+
+
+// ---------------------------------------------------------------------
+// 2. ÉVOLUTION DANS LE TEMPS
+//
+//  Les snapshots sont mensuels et peuvent comporter des trous : la time
+//  intelligence DAX (DATEADD, PREVIOUSMONTH) suppose un calendrier
+//  continu et n'est pas fiable ici. On navigue donc via snapshot_index,
+//  entier séquentiel par régulation produit par le pipeline.
+//
+//  IMPORTANT : ces mesures supposent qu'UNE SEULE régulation est
+//  sélectionnée (l'index repart à 1 à chaque régulation). Le garde-fou
+//  HASONEVALUE est intégré.
+// ---------------------------------------------------------------------
+
+Index snapshot =
+MAX( fact_usage[snapshot_index] )
+
+
+// Usage au snapshot précédent, à l'intérieur de la même régulation.
+Usage % N-1 =
+VAR _IdxCourant = MAX( fact_usage[snapshot_index] )
+RETURN
+    IF(
+        HASONEVALUE( dim_regulation[regulation] ),
+        CALCULATE(
+            [Usage %],
+            REMOVEFILTERS( dim_date ),
+            KEEPFILTERS( fact_usage[snapshot_index] = _IdxCourant - 1 )
+        )
+    )
+
+
+// Variation en points de pourcentage. C'est la mesure qui porte
+// la page « évolution » : elle répond à « qui monte, qui chute ».
+Delta usage (pts) =
+VAR _Precedent = [Usage % N-1]
+RETURN
+    IF( NOT ISBLANK( _Precedent ), [Usage %] - _Precedent )
+
+
+// Variation relative. Un passage de 2 % à 4 % est un doublement,
+// invisible si l'on ne regarde que les points de pourcentage.
+Delta usage (%) =
+VAR _Precedent = [Usage % N-1]
+RETURN
+    IF( NOT ISBLANK( _Precedent ), DIVIDE( [Usage %] - _Precedent, _Precedent ) )
+
+
+Rang N-1 =
+VAR _IdxCourant = MAX( fact_usage[snapshot_index] )
+RETURN
+    IF(
+        HASONEVALUE( dim_regulation[regulation] ),
+        CALCULATE(
+            [Rang],
+            REMOVEFILTERS( dim_date ),
+            KEEPFILTERS( fact_usage[snapshot_index] = _IdxCourant - 1 )
+        )
+    )
+
+
+// Gain de places. Positif = le Pokémon remonte dans le classement.
+Delta rang =
+VAR _Precedent = [Rang N-1]
+RETURN
+    IF( NOT ISBLANK( _Precedent ), _Precedent - [Rang] )
+
+
+// Libellé de tendance, pour un visuel en table ou une mise en forme
+// conditionnelle. Le seuil de 1 point évite de qualifier le bruit.
+Tendance =
+VAR _Delta = [Delta usage (pts)]
+RETURN
+    SWITCH(
+        TRUE(),
+        ISBLANK( _Delta ),  "Nouveau",
+        _Delta >  0.01,     "En hausse",
+        _Delta < -0.01,     "En baisse",
+        "Stable"
+    )
+
+
+// Entrant : présent ce mois-ci, absent le mois précédent.
+Est entrant =
+VAR _IdxCourant = MAX( fact_usage[snapshot_index] )
+VAR _PresentAvant =
+    CALCULATE(
+        NOT ISBLANK( [Usage %] ),
+        REMOVEFILTERS( dim_date ),
+        KEEPFILTERS( fact_usage[snapshot_index] = _IdxCourant - 1 )
+    )
+RETURN
+    IF( NOT ISBLANK( [Usage %] ) && NOT _PresentAvant, 1, 0 )
+
+
+// ---------------------------------------------------------------------
+// 3. ÉCART ÉLITE / LADDER
+//
+//  Smogon publie le même format à quatre paliers de classement.
+//  Comparer le palier 1760 (élite) au palier 0 (tout le ladder) révèle
+//  ce que les meilleurs joueurs adoptent avant le reste de la population.
+//
+//  Lecture métier : c'est un indicateur d'adoption précoce.
+// ---------------------------------------------------------------------
+
+Usage % élite =
+CALCULATE(
+    [Usage %],
+    REMOVEFILTERS( dim_rating_bracket ),
+    dim_rating_bracket[palier] = 1760
+)
+
+
+Usage % ladder =
+CALCULATE(
+    [Usage %],
+    REMOVEFILTERS( dim_rating_bracket ),
+    dim_rating_bracket[palier] = 0
+)
+
+
+// Positif = surjoué par l'élite par rapport à la moyenne du ladder.
+Écart élite / ladder =
+IF(
+    NOT ISBLANK( [Usage % élite] ) && NOT ISBLANK( [Usage % ladder] ),
+    [Usage % élite] - [Usage % ladder]
+)
+
+
+// Ratio d'adoption. Au-dessus de 1, l'élite le joue davantage.
+// Plus lisible que l'écart absolu pour les Pokémon peu joués.
+Ratio adoption élite =
+DIVIDE( [Usage % élite], [Usage % ladder] )
+
+
+// Classification en quadrants, transposition du cadre
+// Staples / Pépites / Pièges / Niche.
+//
+//  Axe horizontal : popularité (usage sur tout le ladder)
+//  Axe vertical   : validation par l'élite (écart élite / ladder)
+//
+//  Les seuils sont à ajuster une fois les vraies données chargées.
+//
+//  ATTENTION : cette MESURE réagit aux filtres, donc elle convient
+//  pour une table, une carte ou une infobulle, mais ne peut pas servir
+//  de LÉGENDE dans un nuage de points (Power BI exige une colonne).
+//  Pour la légende, utiliser la colonne calculée définie juste après.
+Quadrant =
+VAR _Usage = [Usage % ladder]
+VAR _Ecart = [Écart élite / ladder]
+VAR _SeuilUsage = 0.15      // 15 % d'usage
+VAR _SeuilEcart = 0         // l'élite le joue plus que la moyenne
+RETURN
+    SWITCH(
+        TRUE(),
+        ISBLANK( _Usage ) || ISBLANK( _Ecart ), "Non classé",
+        _Usage >= _SeuilUsage && _Ecart >= _SeuilEcart, "Staple",
+        _Usage <  _SeuilUsage && _Ecart >= _SeuilEcart, "Pépite",
+        _Usage >= _SeuilUsage && _Ecart <  _SeuilEcart, "Piège",
+        "Niche"
+    )
+
+
+// --- COLONNE CALCULÉE, à créer sur la table dim_pokemon -------------
+//
+//  Power BI n'accepte qu'une colonne comme légende d'un nuage de points.
+//  Cette colonne fige le quadrant sur le dernier snapshot disponible,
+//  ce qui est exactement ce qu'on veut sur la page « photo du métagame ».
+//
+//  À créer via : dim_pokemon sélectionnée > Nouvelle colonne
+//
+Quadrant (dernier snapshot) =
+VAR _Pkmn = dim_pokemon[pokemon]
+VAR _DerniereDate =
+    CALCULATE( MAX( fact_usage[date_snapshot] ), ALL( fact_usage ) )
+VAR _Ladder =
+    DIVIDE(
+        CALCULATE(
+            SUM( fact_usage[usage_pct] ),
+            ALL( fact_usage ),
+            fact_usage[pokemon] = _Pkmn,
+            fact_usage[palier] = 0,
+            fact_usage[date_snapshot] = _DerniereDate
+        ),
+        100
+    )
+VAR _Elite =
+    DIVIDE(
+        CALCULATE(
+            SUM( fact_usage[usage_pct] ),
+            ALL( fact_usage ),
+            fact_usage[pokemon] = _Pkmn,
+            fact_usage[palier] = 1760,
+            fact_usage[date_snapshot] = _DerniereDate
+        ),
+        100
+    )
+VAR _Ecart = _Elite - _Ladder
+RETURN
+    SWITCH(
+        TRUE(),
+        _Ladder = 0 || ISBLANK( _Ladder ), "Non classé",
+        _Ladder >= 0.15 && _Ecart >= 0, "Staple",
+        _Ladder <  0.15 && _Ecart >= 0, "Pépite",
+        _Ladder >= 0.15 && _Ecart <  0, "Piège",
+        "Niche"
+    )
+
+
+// ---------------------------------------------------------------------
+// 4. CONCENTRATION DU MÉTAGAME
+//
+//  Indice de Herfindahl-Hirschmann, emprunté à l'économie industrielle.
+//  Somme des carrés des parts de marché, ramenée à une échelle 0-10000.
+//
+//  Tracé dans le temps, il répond à : le format se diversifie-t-il,
+//  ou se verrouille-t-il autour de quelques Pokémon ?
+//
+//  Repères usuels : sous 1500 = marché dispersé, 1500 à 2500 =
+//  modérément concentré, au-dessus de 2500 = fortement concentré.
+// ---------------------------------------------------------------------
+
+HHI =
+VAR _Total =
+    CALCULATE( [Usage %], REMOVEFILTERS( dim_pokemon ) )
+VAR _Parts =
+    ADDCOLUMNS(
+        CALCULATETABLE( VALUES( dim_pokemon[pokemon] ), REMOVEFILTERS( dim_pokemon ) ),
+        "@Part", DIVIDE( [Usage %], _Total )
+    )
+RETURN
+    SUMX( _Parts, [@Part] ^ 2 ) * 10000
+
+
+// Nombre de Pokémon dépassant 5 % d'usage. Lecture complémentaire,
+// plus intuitive que le HHI pour un public non technique.
+Pokémon au-dessus de 5% =
+CALCULATE(
+    DISTINCTCOUNT( fact_usage[pokemon] ),
+    KEEPFILTERS( fact_usage[usage_pct] > 5 )
+)
+
+
+// Part cumulée du top 10. Autre mesure de concentration, très
+// parlante en une phrase : « le top 10 pèse X % du métagame ».
+Part du top 10 =
+VAR _Total =
+    CALCULATE( [Usage %], REMOVEFILTERS( dim_pokemon ) )
+VAR _Top10 =
+    CALCULATE(
+        [Usage %],
+        TOPN( 10, CALCULATETABLE( VALUES( dim_pokemon[pokemon] ), REMOVEFILTERS( dim_pokemon ) ), [Usage %], DESC )
+    )
+RETURN
+    DIVIDE( _Top10, _Total )
+
+
+// ---------------------------------------------------------------------
+// 5. COÉQUIPIERS ET ARCHÉTYPES
+//
+//  Nécessite la table dupliquée dim_pokemon_partenaire, reliée à
+//  fact_teammate[pokemon_partenaire] (voir GUIDE.md, étape 3).
+// ---------------------------------------------------------------------
+
+// Fréquence d'apparition conjointe.
+// À lire : « parmi les équipes contenant A, X % contiennent aussi B ».
+Affinité % =
+DIVIDE( SUM( fact_teammate[teammate_pct] ), 100 )
+
+
+// Affinité rapportée à l'usage général du partenaire.
+// Au-dessus de 1, l'association est délibérée et non due au hasard :
+// c'est la définition d'un core.
+//
+//  Transposition métier : c'est un lift d'association, l'indicateur
+//  classique du panier moyen en retail.
+Lift d'association =
+VAR _UsagePartenaire =
+    CALCULATE(
+        [Usage %],
+        REMOVEFILTERS( dim_pokemon ),
+        TREATAS( VALUES( dim_pokemon_partenaire[pokemon] ), dim_pokemon[pokemon] )
+    )
+RETURN
+    DIVIDE( [Affinité %], _UsagePartenaire )
+
+
+// ---------------------------------------------------------------------
+// 6. MOVESETS
+// ---------------------------------------------------------------------
+
+// Taux d'adoption d'un attribut (objet, capacité, talent, spread).
+// Filtrer fact_moveset[attribut_type] dans le visuel ou par segment.
+Adoption % =
+DIVIDE( SUM( fact_moveset[pct] ), 100 )
+
+
+// Diversité des builds : nombre de variantes d'un attribut au-dessus
+// d'un seuil d'adoption. Un Pokémon à build unique est prévisible ;
+// un Pokémon à builds multiples est difficile à anticiper.
+Nb variantes (>10%) =
+CALCULATE(
+    DISTINCTCOUNT( fact_moveset[attribut_valeur] ),
+    KEEPFILTERS( fact_moveset[pct] > 10 )
+)
+
+
+// ---------------------------------------------------------------------
+// 7. QUALITÉ DES DONNÉES
+//
+//  Mesures de contrôle, à placer sur une page dédiée ou dans une
+//  infobulle. Elles démontrent que la fiabilité du chiffre est traitée,
+//  ce qui est rarement le cas dans un tableau de bord.
+// ---------------------------------------------------------------------
+
+Date du dernier snapshot =
+MAX( fact_snapshot[date_snapshot] )
+
+
+Nb fichiers ingérés =
+COUNTROWS( fact_snapshot )
+
+
+// Alerte de représentativité : un mois à faible volume de batailles
+// produit des pourcentages instables.
+Fiabilité du snapshot =
+VAR _Batailles = [Batailles du mois]
+RETURN
+    SWITCH(
+        TRUE(),
+        ISBLANK( _Batailles ), "Inconnue",
+        _Batailles >= 100000,  "Élevée",
+        _Batailles >=  30000,  "Correcte",
+        "Faible : interpréter avec prudence"
+    )
+
+
+// ---------------------------------------------------------------------
+// 8. CHECKS AND COUNTERS  (apparu avec la régulation M-C)
+//
+//  Table fact_counter : pour un Pokémon donné, les adversaires qui le
+//  mettent en difficulté. Smogon ne publie cette section que lorsque le
+//  volume de confrontations est suffisant : seuls les Pokémon les plus
+//  joués en disposent (14 sur 259 en septembre 2026).
+//
+//  Nécessite une troisième copie de la dimension, dim_pokemon_adverse,
+//  reliée à fact_counter[pokemon_adverse] (voir GUIDE, étape 2).
+// ---------------------------------------------------------------------
+
+// Score de matchup Smogon. Plus il est élevé, plus l'adversaire est
+// une menace fiable pour le Pokémon sélectionné. Ce n'est PAS un %.
+Score de matchup =
+AVERAGE( fact_counter[score_matchup] )
+
+
+// Part des confrontations où l'adversaire met le Pokémon K.O.
+Taux de KO =
+DIVIDE( AVERAGE( fact_counter[ko_pct] ), 100 )
+
+
+// Part des confrontations où le Pokémon est contraint de sortir.
+Taux de switch forcé =
+DIVIDE( AVERAGE( fact_counter[switch_pct] ), 100 )
+
+
+// Pression totale exercée : KO + switch forcé. Lecture simple pour un
+// public non spécialiste : « dans X % des cas, cet adversaire force
+// une réponse ».
+Pression exercée =
+[Taux de KO] + [Taux de switch forcé]
+
+
+// Nombre de Pokémon du méta que cet adversaire contre.
+// Un adversaire qui apparaît comme counter de plusieurs menaces
+// majeures est un choix d'équipe à fort rendement.
+Nb Pokémon contrés =
+CALCULATE(
+    DISTINCTCOUNT( fact_counter[pokemon] ),
+    REMOVEFILTERS( dim_pokemon )
+)
