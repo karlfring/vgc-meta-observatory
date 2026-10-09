@@ -1,6 +1,6 @@
-# Observatoire du métagame Pokémon VGC
+# VGC Meta Overview
 
-Suivre des parts de marché sur un marché qui change tous les mois.
+Suivi mensuel du métagame Pokémon VGC.
 
 Ce dépôt contient un pipeline Python qui archive chaque mois les statistiques
 publiques du jeu compétitif Pokémon Champions (format VGC, régulation M-C),
