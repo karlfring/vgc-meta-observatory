@@ -121,7 +121,7 @@ docs/               modèle de données, méthode, journal qualité
 - [x] Tableau de bord : vue d'ensemble, quadrants, fiche par Pokémon, classement
 - [ ] Rapport Power BI (guide de montage et mesures DAX déjà écrits)
 - [x] Écart élite / reste du ladder à partir des paliers 0 et 1760
-- [x] Fiche par palier : natures, points de statistique moyens et 3 spreads les plus joués
+- [x] Fiche par palier : natures, points de statistique moyens et tous les spreads détaillés par Smogon
 - [ ] Évolutions mois par mois (à partir des données d'octobre, publiées le 1er novembre)
 - [ ] Résultats de tournois pour mesurer un taux de conversion en phase finale
 - [ ] Extension à la régulation M-D
