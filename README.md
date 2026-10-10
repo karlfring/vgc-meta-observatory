@@ -109,7 +109,7 @@ src/fetch.py        téléchargement, archivage, calendrier de publication
 src/parsers.py      parsing des formats texte Smogon
 src/ingest.py       orchestration et construction du modèle en étoile
 tests/              15 tests et fichiers témoins
-powerbi/            guide de montage et mesures DAX
+powerbi/            guide de montage, requêtes Power Query et mesures DAX
 docs/               modèle de données, méthode, journal qualité
 ```
 

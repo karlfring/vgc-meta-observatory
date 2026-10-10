@@ -460,3 +460,62 @@ CALCULATE(
     DISTINCTCOUNT( fact_counter[pokemon] ),
     REMOVEFILTERS( dim_pokemon )
 )
+
+
+// ---------------------------------------------------------------------
+// 9. SPREADS ET RÉPARTITION DES STATISTIQUES
+//
+//  Table fact_spread (requête Power Query dérivée de fact_moveset) :
+//  une ligne par spread détaillé par Smogon, six au plus par Pokémon
+//  et par palier, les autres étant regroupés sous « Other ».
+//  Toujours filtrer sur UN Pokémon et UN palier.
+// ---------------------------------------------------------------------
+
+// Part des équipes du Pokémon qui jouent ce spread.
+// Au niveau d'un Pokémon entier, c'est la couverture : la part des
+// équipes dont le spread est détaillé par Smogon.
+Part des équipes (spread) =
+DIVIDE( SUM( fact_spread[pct] ), 100 )
+
+
+// Part regroupée par Smogon sous « Other », non détaillée.
+Autres répartitions =
+VAR _Couverture =
+    CALCULATE(
+        [Part des équipes (spread)],
+        REMOVEFILTERS( fact_spread[nature] ),
+        REMOVEFILTERS( fact_spread[pv] ), REMOVEFILTERS( fact_spread[attaque] ),
+        REMOVEFILTERS( fact_spread[defense] ), REMOVEFILTERS( fact_spread[atq_spe] ),
+        REMOVEFILTERS( fact_spread[def_spe] ), REMOVEFILTERS( fact_spread[vitesse] )
+    )
+RETURN
+    IF( NOT ISBLANK( _Couverture ), 1 - _Couverture )
+
+
+// Part d'une nature parmi les spreads détaillés, ramenée à 100 %.
+Part de la nature =
+DIVIDE(
+    SUM( fact_spread[pct] ),
+    CALCULATE( SUM( fact_spread[pct] ), REMOVEFILTERS( fact_spread[nature] ) )
+)
+
+
+// Points moyens investis par statistique (32 au maximum), pondérés par
+// le taux d'adoption de chaque spread.
+Points moyens PV =
+DIVIDE( SUMX( fact_spread, fact_spread[pv] * fact_spread[pct] ), SUM( fact_spread[pct] ) )
+
+Points moyens Attaque =
+DIVIDE( SUMX( fact_spread, fact_spread[attaque] * fact_spread[pct] ), SUM( fact_spread[pct] ) )
+
+Points moyens Défense =
+DIVIDE( SUMX( fact_spread, fact_spread[defense] * fact_spread[pct] ), SUM( fact_spread[pct] ) )
+
+Points moyens Atq. Spé. =
+DIVIDE( SUMX( fact_spread, fact_spread[atq_spe] * fact_spread[pct] ), SUM( fact_spread[pct] ) )
+
+Points moyens Déf. Spé. =
+DIVIDE( SUMX( fact_spread, fact_spread[def_spe] * fact_spread[pct] ), SUM( fact_spread[pct] ) )
+
+Points moyens Vitesse =
+DIVIDE( SUMX( fact_spread, fact_spread[vitesse] * fact_spread[pct] ), SUM( fact_spread[pct] ) )
