@@ -1,69 +1,68 @@
 # Montage du modèle Power BI
 
 Guide de mise en place, de l'import des CSV à la construction des pages.
-Compte une heure pour les étapes 1 à 5, qui sont mécaniques.
+Compte une heure pour les étapes 1 à 5, qui sont mécaniques, puis une à deux
+heures pour les pages.
 
 ---
 
-## Étape 0. Produire les données
+## Étape 0. Prérequis
 
-Le projet suit uniquement la régulation M-C. Les statistiques de septembre
-sont publiées depuis le 1er octobre :
-
-```bash
-python src/ingest.py
-```
-
-Tu obtiens neuf fichiers dans `data/processed/`.
+- **Power BI Desktop**, gratuit, sous Windows (Microsoft Store ou site de
+  Microsoft).
+- **Rien à installer côté données** : le workflow GitHub Actions publie les CSV
+  chaque mois dans `data/processed/`, et Power BI les lit directement sur
+  GitHub. Python n'est utile que pour travailler hors ligne (`python src/ingest.py`).
 
 ---
 
-## Étape 1. Importer les CSV
+## Étape 1. Charger les données depuis GitHub
 
-`Accueil > Obtenir les données > Texte/CSV`, puis répète pour les huit fichiers.
+Toutes les requêtes sont dans [`requetes.pq`](requetes.pq). Elles typent les
+colonnes en culture **en-US** : le point des CSV (`55.69655`) est lu comme
+séparateur décimal même si ton Power BI est en français. C'était le piège
+principal de l'import manuel, il est réglé dans le code.
 
-> **Le piège à ne pas manquer.** Les CSV sont écrits par pandas avec le point
-> comme séparateur décimal (`55.69655`). Si ton Power BI est en locale française,
-> il interprétera le point comme séparateur de milliers et transformera
-> `55.69655` en `5569655`. Tous tes pourcentages seront faux, sans message
-> d'erreur.
->
-> Pour l'éviter : dans l'éditeur Power Query, sélectionne les colonnes
-> numériques, puis `Transformer > Type de données > Utiliser les paramètres
-> régionaux`, et choisis **Anglais (États-Unis)**.
->
-> Vérifie après import que `usage_pct` du premier Pokémon est bien un nombre
-> entre 0 et 100.
+1. `Accueil > Transformer les données` pour ouvrir Power Query.
+2. `Accueil > Gérer les paramètres > Nouveau paramètre` : nom `UrlDonnees`,
+   type **Texte**, valeur
+   `https://raw.githubusercontent.com/karlfring/vgc-meta-observatory/main/data/processed/`.
+3. Pour chaque autre bloc de `requetes.pq`, dans l'ordre :
+   `Accueil > Nouvelle source > Requête vide`, puis `Éditeur avancé`, colle le
+   bloc, valide, et renomme la requête avec le nom indiqué en commentaire
+   (`fnChargerCsv`, `dim_pokemon`, `fact_usage`...).
+4. À la première requête, Power BI demande comment se connecter à
+   `raw.githubusercontent.com` : choisis **Anonyme**.
+5. `Fermer et appliquer`.
 
-Colonnes concernées : `usage_pct`, `raw_pct`, `real_pct`, `pct`,
-`teammate_pct`, `avg_weight_team`.
+Tu obtiens 13 tables : les 9 fichiers du pipeline, deux copies de
+`dim_pokemon` (`dim_pokemon_partenaire` et `dim_pokemon_adverse`, une seule
+relation active étant permise entre deux tables), `fact_spread` et la
+fonction de chargement.
 
-Pour les colonnes de date (`date_snapshot`, `date_debut`, `date_fin`), même
-logique : type Date avec les paramètres régionaux anglais, le format source
-étant ISO (`2026-06-30`).
+**Contrôle rapide** : dans `fact_usage`, filtre `palier = 1500`. Rillaboom doit
+afficher `usage_pct = 54,73` et `raw_count = 229704`.
 
 ---
 
-## Étape 2. Créer la table des partenaires
+## Étape 2. La table des spreads
 
-`fact_teammate` doit être reliée deux fois à `dim_pokemon` : une fois par
-`pokemon`, une fois par `pokemon_partenaire`. Power BI n'accepte qu'une seule
-relation active entre deux tables, il faut donc une copie de la dimension.
+`fact_spread` est dérivée de `fact_moveset` dans Power Query : une ligne par
+spread détaillé par Smogon, avec les six statistiques en colonnes.
+`Adamant:32/32/0/0/2/0` devient nature `Adamant`, `pv` 32, `attaque` 32,
+`defense` 0, `atq_spe` 0, `def_spe` 2, `vitesse` 0.
 
-Dans l'éditeur Power Query, clic droit sur `dim_pokemon` >
-**Dupliquer** > renomme la copie `dim_pokemon_partenaire`.
-
-Même opération une seconde fois pour `dim_pokemon_adverse`, utilisée par
-`fact_counter` (table apparue avec la régulation M-C).
-
-Puis `Fermer et appliquer`.
+Smogon ne détaille que six spreads par Pokémon et par palier ; le reste est
+regroupé sous « Other ». La mesure `Autres répartitions` affiche cette part,
+pour ne jamais présenter les spreads listés comme l'ensemble des joueurs.
 
 ---
 
 ## Étape 3. Construire les relations
 
-Vue Modèle. Crée ces vingt relations, toutes en **un vers plusieurs**, sens de
-filtrage **simple** (de la dimension vers le fait).
+Vue Modèle. Power BI en détecte une partie tout seul : vérifie-les et complète
+pour obtenir ces vingt-quatre relations, toutes en **un vers plusieurs**, sens
+de filtrage **simple** (de la dimension vers le fait).
 
 | Depuis | Vers | Clé |
 |---|---|---|
@@ -87,9 +86,14 @@ filtrage **simple** (de la dimension vers le fait).
 | `dim_date` | `fact_counter` | `date_snapshot` |
 | `dim_regulation` | `fact_counter` | `regulation` |
 | `dim_rating_bracket` | `fact_counter` | `palier` |
+| `dim_pokemon` | `fact_spread` | `pokemon` |
+| `dim_date` | `fact_spread` | `date_snapshot` |
+| `dim_regulation` | `fact_spread` | `regulation` |
+| `dim_rating_bracket` | `fact_spread` | `palier` |
 
-Enfin, sélectionne `dim_date` puis `Outils de table > Marquer comme table de
-dates`, colonne `date_snapshot`.
+Ne marque pas `dim_date` comme table de dates : les instantanés sont
+mensuels, donc non contigus, et les évolutions se calculent avec
+`snapshot_index` plutôt qu'avec la time intelligence (voir l'étape 5).
 
 ---
 
@@ -100,7 +104,7 @@ nomme-la `_Mesures`, valide sans rien saisir. Supprime ensuite la colonne
 vide générée.
 
 Ouvre `mesures.dax` et copie les mesures une par une
-(`Accueil > Nouvelle mesure`). Elles sont regroupées en sept sections,
+(`Accueil > Nouvelle mesure`). Elles sont regroupées en neuf sections,
 commence par la section 1 qui alimente tout le reste.
 
 Une seule exception : `Quadrant (dernier snapshot)` est une **colonne
@@ -108,8 +112,11 @@ calculée**, pas une mesure. Sélectionne `dim_pokemon` puis
 `Nouvelle colonne`. Le fichier le signale à l'endroit concerné.
 
 Formate au passage :
-- `Usage %`, `Usage % élite`, `Usage % ladder`, `Adoption %`, `Affinité %`,
-  `Part du top 10` : pourcentage, 2 décimales
+- `Usage %`, `Usage % élite`, `Usage % ladder`, `Usage % référence`,
+  `Adoption %`, `Affinité %`, `Part du top 10`, `Part des équipes (spread)`,
+  `Autres répartitions`, `Part de la nature` : pourcentage, 1 ou 2 décimales
+- `Ratio adoption élite` : nombre décimal, 2 décimales
+- `Points moyens ...` : nombre décimal, 1 décimale
 - `Delta usage (pts)`, `Écart élite / ladder` : pourcentage, 2 décimales
 - `HHI`, `Rang`, `Apparitions`, `Batailles du mois` : nombre entier
 
@@ -139,19 +146,24 @@ L'état actuel, en un coup d'œil.
   `Pokémon au-dessus de 5%`, `Part du top 10`, `Date du dernier snapshot`
 - **Graphique à barres horizontales** : top 25 par `Usage %`, avec
   `Delta usage (pts)` en mise en forme conditionnelle
-- **Nuage de points** (le visuel central) :
+- **Nuage de points** (le visuel central, mêmes règles que le tableau de bord
+  et que `docs/methode-quadrants.md`) :
   - détails : `dim_pokemon[pokemon]`
-  - axe X : `Usage % ladder`
-  - axe Y : `Écart élite / ladder`
+  - axe X : `Usage % référence` (palier 1500), **échelle logarithmique**
+  - axe Y : `Ratio adoption élite` (usage 1760 ÷ usage 0), **échelle
+    logarithmique**
   - légende : `dim_pokemon[Quadrant (dernier snapshot)]`, la **colonne
     calculée**, car Power BI n'accepte pas une mesure en légende
-  - taille : `Apparitions`
-  - infobulle : la mesure `Quadrant`, qui elle réagit aux filtres
-- **Segments** : régulation, palier, date
+  - infobulle : `Usage % ladder`, `Usage % élite`, et la mesure `Quadrant`
+  - filtre du visuel : `Usage % référence` supérieur ou égal à 1 %
+  - deux lignes de référence (volet Analyse) : constante X à **0,10**,
+    constante Y à **1**
+- **Segments** : régulation et date. Pas de segment de palier sur cette page :
+  les mesures du nuage fixent elles-mêmes leurs paliers.
 
 Le nuage de points est ce qui porte ton positionnement : il ne décrit pas,
-il classe. Ajoute deux lignes de référence (constante X à 15 %, constante Y
-à 0) pour matérialiser les quadrants.
+il classe. Contrôle : tu dois retrouver 14 staples, 15 pépites, 5 pièges et
+29 niches en septembre 2026.
 
 ### Page 2 : Évolution
 
@@ -174,12 +186,34 @@ ne la propose.
 - **Table des associations fortes** : filtrée sur `Lift d'association > 1.5`,
   triée par `Affinité %` décroissante
 - **Détail d'un Pokémon** : sélectionne-en un, affiche ses objets, capacités
-  et spreads via `Adoption %` avec un segment sur `attribut_type`
+  et talents via `Adoption %` avec un segment sur `attribut_type`
 - **Menaces** (M-C uniquement) : pour le Pokémon sélectionné, table
   `dim_pokemon_adverse[pokemon]`, `Score de matchup`, `Taux de KO`,
   `Taux de switch forcé`, triée par score décroissant
 
-### Page 4 : Qualité des données
+### Page 4 : Fiche Pokémon et spreads
+
+L'équivalent de la fiche du tableau de bord, avec un vrai filtre par palier.
+
+- **Segments** : `dim_pokemon[pokemon]` (sélection unique) et
+  `dim_rating_bracket[libelle]` (sélection unique)
+- **Cartes** : `Usage %`, `Rang`, `Viability ceiling`, `Part des équipes
+  (spread)` renommée « Couverture des spreads »
+- **Barres** : `fact_spread[nature]` par `Part de la nature`
+- **Barres groupées** : les six `Points moyens ...` ; pour comparer deux
+  paliers, duplique le visuel et fixe le palier dans son volet de filtres
+- **Table des spreads** : `nature`, `pv`, `attaque`, `defense`, `atq_spe`,
+  `def_spe`, `vitesse` (sans agrégation : `Ne pas résumer`) et
+  `Part des équipes (spread)`, triée par part décroissante, avec une mise en
+  forme conditionnelle en nuances sur les six colonnes de statistiques
+- **Carte** : `Autres répartitions`, la part regroupée par Smogon
+- **Menaces** : déplace ici la table des menaces de la page 3 si tu préfères
+  regrouper tout ce qui concerne un Pokémon
+
+Contrôle : Rillaboom au palier 1500 doit afficher 6 spreads, le premier étant
+`Adamant 32/32/0/0/2/0` à 2,47 %, et `Autres répartitions` à 88,3 %.
+
+### Page 5 : Qualité des données
 
 Une page discrète mais qui te distingue nettement.
 
@@ -217,8 +251,9 @@ Le 2 du mois (ou automatiquement via GitHub Actions) :
 python src/ingest.py
 ```
 
-Puis `Actualiser` dans Power BI. Seul le nouveau mois est téléchargé, le
-modèle absorbe le snapshot sans modification.
+Rien à faire côté données : le workflow GitHub Actions ingère le nouveau mois
+le 2 et le commite. Il suffit de cliquer sur `Actualiser` dans Power BI, qui
+relit les CSV sur GitHub ; le modèle absorbe le snapshot sans modification.
 
 | Données du mois | Publiées par Smogon | Snapshot n° |
 |---|---|---|
