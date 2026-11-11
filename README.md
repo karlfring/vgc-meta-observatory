@@ -59,12 +59,21 @@ src/parsers.py    expressions régulières : usage, movesets, matchups
 src/ingest.py     modèle en étoile en CSV  ──►  data/processed/
         │
         ▼
-tableau de bord   (rapport Power BI en préparation : powerbi/)
+src/export_dashboard.py   fichiers JSON du tableau de bord  ──►  data/dashboard/
+        │
+        ▼
+tableau de bord   en ligne, mis à jour chaque mois (rapport Power BI en préparation : powerbi/)
 ```
 
 Le workflow `.github/workflows/ingest.yml` s'exécute **le 2 de chaque mois** :
-il lance les tests, ingère le nouveau mois et commite les données. Chaque
-évolution du métagame est ainsi traçable à un commit.
+il lance les tests, ingère le nouveau mois, prépare les fichiers du tableau de
+bord et commite les données. Chaque évolution du métagame est ainsi traçable à
+un commit. Le tableau de bord en ligne recharge ensuite ces fichiers.
+
+`data/dashboard/` contient l'usage de chaque mois de la régulation (pour suivre
+les évolutions), les batailles par mois et par palier, les builds, coéquipiers
+et menaces du dernier mois, et un `manifest.json` qui donne les mois couverts,
+le nombre de lignes et l'empreinte SHA-256 de chaque fichier.
 
 ## Modèle de données
 
@@ -83,7 +92,8 @@ Choix de conception et dictionnaire des colonnes : [docs/modele-de-donnees.md](d
 
 ## Qualité des données
 
-15 tests couvrent les parsers et les bornes du calendrier de publication. Deux
+25 tests couvrent les parsers, les bornes du calendrier de publication et
+l'export du tableau de bord. Deux
 d'entre eux verrouillent des bugs réels qui ne faisaient rien planter mais
 faussaient silencieusement les résultats : [docs/journal-qualite.md](docs/journal-qualite.md).
 
@@ -95,11 +105,14 @@ pip install -r requirements.txt
 python src/ingest.py                      # régulation courante (M-C), 4 paliers
 python src/ingest.py --paliers 0 1760     # sous-ensemble de paliers
 
-python -m pytest tests/ -q                # 15 tests
+python src/export_dashboard.py            # fichiers JSON du tableau de bord
+
+python -m pytest tests/ -q                # 25 tests
 ```
 
 Les CSV sont écrits dans `data/processed/`, les fichiers bruts archivés dans
-`data/raw/`. Un mois déjà archivé n'est jamais retéléchargé.
+`data/raw/`, les fichiers du tableau de bord dans `data/dashboard/`. Un mois
+déjà archivé n'est jamais retéléchargé.
 
 ## Structure
 
@@ -108,7 +121,8 @@ src/config.py       régulation suivie, paliers, politesse réseau
 src/fetch.py        téléchargement, archivage, calendrier de publication
 src/parsers.py      parsing des formats texte Smogon
 src/ingest.py       orchestration et construction du modèle en étoile
-tests/              15 tests et fichiers témoins
+src/export_dashboard.py  fichiers JSON du tableau de bord
+tests/              25 tests et fichiers témoins
 powerbi/            guide de montage, requêtes Power Query et mesures DAX
 docs/               modèle de données, méthode, journal qualité
 ```
@@ -122,7 +136,7 @@ docs/               modèle de données, méthode, journal qualité
 - [ ] Rapport Power BI (guide de montage et mesures DAX déjà écrits)
 - [x] Écart élite / reste du ladder à partir des paliers 0 et 1760
 - [x] Fiche par palier : natures, points de statistique moyens et tous les spreads détaillés par Smogon
-- [ ] Évolutions mois par mois (à partir des données d'octobre, publiées le 1er novembre)
+- [x] Évolutions mois par mois : hausses et baisses, top 15, devenir des quadrants, trajectoire par Pokémon
 - [ ] Résultats de tournois pour mesurer un taux de conversion en phase finale
 - [ ] Extension à la régulation M-D
 

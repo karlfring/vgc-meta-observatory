@@ -40,6 +40,9 @@ jobs:
             python src/ingest.py
           fi
 
+      - name: Export des données du tableau de bord
+        run: python src/export_dashboard.py
+
       - name: Commit des nouvelles données
         run: |
           git config user.name  "github-actions[bot]"

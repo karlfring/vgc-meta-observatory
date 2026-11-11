@@ -1,0 +1,32 @@
+{
+  "regulation": "M-C",
+  "format_id": "gen9championsvgc2026regmcbo3",
+  "mois": "2026-10",
+  "mois_precedent": "2026-09",
+  "mois_couverts": [
+    "2026-09",
+    "2026-10"
+  ],
+  "fichiers": {
+    "pokemon": {
+      "lignes": 682,
+      "sha256": "57d93b68a810c31e259929cb6db6d56fdf9d786296276a10e206c1488500375c"
+    },
+    "instantanes": {
+      "lignes": 8,
+      "sha256": "d671ac6198db42b5e39b13dfe9e905b6aa4caca8691af575423198b71426dbb0"
+    },
+    "builds": {
+      "lignes": 20202,
+      "sha256": "cc0c00808f678bee376b29333ae0df03851f1232a216b90c975b61c23bf9eab1"
+    },
+    "coequipiers": {
+      "lignes": 9142,
+      "sha256": "dd58f8e8225d9680e005373271b848da337d676e6fa323db3df3f2c165554e1d"
+    },
+    "counters": {
+      "lignes": 96,
+      "sha256": "6b9bbb98b505bdae52a159dcd53e4fd755ccf80ccdd641493ada8fda4c7caf69"
+    }
+  }
+}
