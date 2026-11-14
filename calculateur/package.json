@@ -1,0 +1,16 @@
+{
+  "name": "vgc-meta-overview-calculateur",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reconstruction et vérification du calculateur de dégâts du tableau de bord VGC Meta Overview",
+  "license": "MIT",
+  "scripts": {
+    "rebuild": "./rebuild.sh",
+    "test": "cd .. && python3 -m pytest calculateur/tests -q"
+  },
+  "devDependencies": {
+    "eslint-scope": "8.2.0",
+    "espree": "10.3.0",
+    "playwright": "1.63.0"
+  }
+}

@@ -63,6 +63,7 @@ src/export_dashboard.py   fichiers JSON du tableau de bord  ──►  data/dash
         │
         ▼
 tableau de bord   en ligne, mis à jour chaque mois (rapport Power BI en préparation : powerbi/)
+                  + onglet Calculateur : moteur de dégâts repris de NCP, vérifié (calculateur/)
 ```
 
 Le workflow `.github/workflows/ingest.yml` s'exécute **le 2 de chaque mois** :
@@ -74,6 +75,17 @@ un commit. Le tableau de bord en ligne recharge ensuite ces fichiers.
 les évolutions), les batailles par mois et par palier, les builds, coéquipiers
 et menaces du dernier mois, et un `manifest.json` qui donne les mois couverts,
 le nombre de lignes et l'empreinte SHA-256 de chaque fichier.
+
+## Calculateur de dégâts
+
+Le tableau de bord intègre un calculateur de dégâts : deux Pokémon, chacun avec son set le plus joué du mois
+(objet, talent, spread, capacités), tout modifiable, et un calcul refait à chaque changement. Le moteur est celui
+du [Nimbasa City Post VGC Damage Calculator](https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator) en mode
+Champions, repris sans réécrire une seule formule et empaqueté pour tourner dans la page.
+
+Sa fidélité est vérifiée duel par duel contre la page d'origine : sur 464 duels, les 3 712 attaques donnent les
+mêmes jets de dégâts, chances de K.O., descriptions et textes de recul. Reconstruction, vérification et mise à jour
+après une nouvelle version de NCP : [calculateur/README.md](calculateur/README.md).
 
 ## Modèle de données
 
@@ -108,6 +120,7 @@ python src/ingest.py --paliers 0 1760     # sous-ensemble de paliers
 python src/export_dashboard.py            # fichiers JSON du tableau de bord
 
 python -m pytest tests/ -q                # 25 tests
+python -m pytest calculateur/tests -q     # calculateur de dégâts (Node.js requis), 5 tests
 ```
 
 Les CSV sont écrits dans `data/processed/`, les fichiers bruts archivés dans
@@ -123,6 +136,7 @@ src/parsers.py      parsing des formats texte Smogon
 src/ingest.py       orchestration et construction du modèle en étoile
 src/export_dashboard.py  fichiers JSON du tableau de bord
 tests/              25 tests et fichiers témoins
+calculateur/        moteur du calculateur de dégâts : reconstruction, vérification, tests
 powerbi/            guide de montage, requêtes Power Query et mesures DAX
 docs/               modèle de données, méthode, journal qualité
 ```
@@ -137,6 +151,7 @@ docs/               modèle de données, méthode, journal qualité
 - [x] Écart élite / reste du ladder à partir des paliers 0 et 1760
 - [x] Fiche par palier : natures, points de statistique moyens et tous les spreads détaillés par Smogon
 - [x] Évolutions mois par mois : hausses et baisses, top 15, devenir des quadrants, trajectoire par Pokémon
+- [x] Calculateur de dégâts dans le tableau de bord, avec les sets du mois préremplis
 - [ ] Résultats de tournois pour mesurer un taux de conversion en phase finale
 - [ ] Extension à la régulation M-D
 
@@ -149,6 +164,8 @@ docs/               modèle de données, méthode, journal qualité
 ## Crédits
 
 Données : statistiques mensuelles publiques de [Smogon University](https://www.smogon.com/stats/).
+Moteur du calculateur de dégâts : [Nimbasa City Post VGC Damage Calculator](https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator)
+(nerd-of-now et contributeurs), sous licence MIT.
 Pokémon © Nintendo, Creatures, GAME FREAK et The Pokémon Company. Projet de
 fan non commercial, réalisé dans le cadre d'un portfolio de data analyst.
 
@@ -157,4 +174,6 @@ Auteur : [Karl Akpovi](https://www.linkedin.com/in/karlakpovi) ·
 
 ## Licence
 
-Code sous licence MIT. Les données restent la propriété de leurs auteurs (Smogon University) et les marques Pokémon celle de leurs ayants droit.
+Code sous licence MIT. Le dossier `calculateur/` reprend aussi du code et des données du Nimbasa City Post VGC
+Damage Calculator, sous sa propre licence MIT (`calculateur/LICENSE-NCP`). Les données restent la propriété de leurs
+auteurs (Smogon University) et les marques Pokémon celle de leurs ayants droit.
