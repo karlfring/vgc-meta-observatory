@@ -64,6 +64,7 @@ src/export_dashboard.py   fichiers JSON du tableau de bord  ──►  data/dash
         ▼
 tableau de bord   en ligne, mis à jour chaque mois (rapport Power BI en préparation : powerbi/)
                   + onglet Calculateur : moteur de dégâts repris de NCP, vérifié (calculateur/)
+                  + site privé en Rust sur Cloud Run, derrière une connexion (site/)
 ```
 
 Le workflow `.github/workflows/ingest.yml` s'exécute **le 2 de chaque mois** :
@@ -86,6 +87,13 @@ Champions, repris sans réécrire une seule formule et empaqueté pour tourner d
 Sa fidélité est vérifiée duel par duel contre la page d'origine : sur 464 duels, les 3 712 attaques donnent les
 mêmes jets de dégâts, chances de K.O., descriptions et textes de recul. Reconstruction, vérification et mise à jour
 après une nouvelle version de NCP : [calculateur/README.md](calculateur/README.md).
+
+## Site privé
+
+Le même tableau de bord est servi par un site privé, réservé à un cercle d'amis : un serveur Rust (Axum) en un seul
+binaire, déployé sur Google Cloud Run par GitHub Actions après chaque ingestion. Comptes créés à la main, mots de
+passe en Argon2id, session dans un cookie chiffré, aucune base de données : le service s'éteint quand personne ne
+s'en sert et reste dans la gratuité de Cloud Run. Détails et mise en ligne : [site/README.md](site/README.md).
 
 ## Modèle de données
 
@@ -121,6 +129,7 @@ python src/export_dashboard.py            # fichiers JSON du tableau de bord
 
 python -m pytest tests/ -q                # 25 tests
 python -m pytest calculateur/tests -q     # calculateur de dégâts (Node.js requis), 5 tests
+cd site && cargo test                     # site privé (Rust), 16 tests
 ```
 
 Les CSV sont écrits dans `data/processed/`, les fichiers bruts archivés dans
@@ -137,6 +146,7 @@ src/ingest.py       orchestration et construction du modèle en étoile
 src/export_dashboard.py  fichiers JSON du tableau de bord
 tests/              25 tests et fichiers témoins
 calculateur/        moteur du calculateur de dégâts : reconstruction, vérification, tests
+site/               site privé en Rust : serveur, page du tableau de bord, déploiement Cloud Run
 powerbi/            guide de montage, requêtes Power Query et mesures DAX
 docs/               modèle de données, méthode, journal qualité
 ```
@@ -152,6 +162,7 @@ docs/               modèle de données, méthode, journal qualité
 - [x] Fiche par palier : natures, points de statistique moyens et tous les spreads détaillés par Smogon
 - [x] Évolutions mois par mois : hausses et baisses, top 15, devenir des quadrants, trajectoire par Pokémon
 - [x] Calculateur de dégâts dans le tableau de bord, avec les sets du mois préremplis
+- [x] Site privé en Rust sur Cloud Run, avec connexion et comptes créés à la main
 - [ ] Résultats de tournois pour mesurer un taux de conversion en phase finale
 - [ ] Extension à la régulation M-D
 

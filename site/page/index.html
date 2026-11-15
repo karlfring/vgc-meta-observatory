@@ -1,0 +1,2491 @@
+<style>
+  #dash-root .ob { font-family: var(--font-anthropic-sans); display: grid; gap: var(--cds-gap-lg); }
+  #dash-root .ob-head h1 {
+    font-family: var(--font-anthropic-serif); font-weight: 400;
+    font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance;
+  }
+  #dash-root .ob-sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: var(--cds-gap-xs) 0 0; }
+  #dash-root .ob-lead { font-size: var(--cds-font-size-body); margin: var(--cds-gap-sm) 0 0; max-width: 70ch; line-height: 1.5; }
+  #dash-root .ob .ob-lead b { font-weight: 600; }
+
+  #dash-root .ob-kpis { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+  #dash-root .ob-kpi, #dash-root .ob-card {
+    background: var(--color-panel); border: 1px solid var(--color-border-line);
+    border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0;
+  }
+  #dash-root .ob-kpi-label { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  #dash-root .ob-kpi-value {
+    font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title);
+    font-variant-numeric: tabular-nums; margin-top: var(--cds-gap-xs); min-height: 1.3em;
+  }
+  #dash-root .ob-kpi-note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin-top: var(--cds-gap-xs); }
+
+  #dash-root .ob-grid { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); align-items: start; }
+  #dash-root .ob-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+  #dash-root .ob-note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: var(--cds-gap-xs) 0 var(--cds-gap-md); }
+
+  #dash-root .ob-chart { position: relative; min-height: 600px; }
+  #dash-root .ob-chart svg { display: block; overflow: visible; }
+  #dash-root .ob-chart .bar { cursor: pointer; }
+  #dash-root .ob-tip {
+    position: absolute; pointer-events: none; background: var(--cds-surface-popover);
+    border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover);
+    padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap;
+  }
+  #dash-root .ob-tip .k { color: var(--cds-text-secondary); }
+
+  #dash-root .ob-pick { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-md); }
+  #dash-root .ob-pick select { font: inherit; padding: var(--cds-pad-xs) var(--cds-pad-sm); max-width: 100%; }
+  #dash-root .ob-id { display: flex; flex-wrap: wrap; gap: var(--cds-gap-lg); align-items: baseline; margin-bottom: var(--cds-gap-md); }
+  #dash-root .ob-id-name { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); font-weight: 400; }
+  #dash-root .ob-id-stat { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  #dash-root .ob-id-stat b { color: var(--color-fg); font-variant-numeric: tabular-nums; font-size: var(--cds-font-size-body); }
+
+  #dash-root .ob-sections { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
+  #dash-root .ob-sec h3 { font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .06em; color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-sm); }
+  #dash-root .ob-list { display: grid; gap: var(--cds-gap-xs); min-height: 6rem; align-content: start; }
+  #dash-root .ob-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); }
+  #dash-root .ob-row .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #dash-root .ob-row .val { font-variant-numeric: tabular-nums; color: var(--color-fg-muted); }
+  #dash-root .ob-row .trk { grid-column: 1 / -1; height: 4px; border-radius: 4px; background: var(--cds-chart-grid); overflow: hidden; }
+  #dash-root .ob-row .fil { height: 100%; border-radius: 4px; }
+
+  #dash-root .ob-empty { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  #dash-root .ob-search { font: inherit; width: 100%; max-width: 22rem; padding: var(--cds-pad-xs) var(--cds-pad-sm); margin-bottom: var(--cds-gap-sm); }
+  #dash-root .ob-tblwrap { max-height: 28rem; overflow: auto; }
+  #dash-root .ob-tbl { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  #dash-root .ob-tbl th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: var(--cds-font-weight-medium); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); }
+  #dash-root .ob-tbl th button { all: unset; cursor: pointer; }
+  #dash-root .ob-tbl th button:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  #dash-root .ob-tbl td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+  #dash-root .ob-tbl td.num, #dash-root .ob-tbl th.num { text-align: right; }
+  #dash-root .ob-tbl tbody tr { cursor: pointer; }
+  #dash-root .ob-tbl tbody tr:hover td { background: var(--cds-chart-grid); }
+  #dash-root .ob-incell { display: inline-block; vertical-align: middle; height: 6px; border-radius: 3px; margin-left: var(--cds-gap-sm); }
+  #dash-root .ob-method { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); line-height: 1.5; max-width: 75ch; }
+
+  #dash-root [data-dash-source-state=empty] { color: transparent; }
+  #dash-root [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  #dash-root .ob-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: inherit; }
+  #dash-root .ob-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+  @media (max-width: 30rem) { #dash-root .ob-tbl .hide-sm { display: none; } }
+
+  /* sprites */
+  #dash-root .ob-spr { display: inline-block; vertical-align: middle; object-fit: contain; flex: none; }
+  #dash-root .ob-spr-ph { display: inline-block; vertical-align: middle; border-radius: 50%; background: var(--cds-chart-grid); flex: none; }
+  #dash-root .ob-podium { display: grid; gap: var(--cds-gap-sm); grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr)); margin-top: var(--cds-gap-md); }
+  #dash-root .ob-pod {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--cds-gap-sm);
+    background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius);
+    padding: var(--cds-pad-sm); cursor: pointer; text-align: left; font: inherit; color: inherit;
+  }
+  #dash-root .ob-pod:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  #dash-root .ob-pod[aria-pressed="true"] { border-color: var(--color-fg-muted); }
+  #dash-root .ob-pod-txt { display: grid; min-width: 0; }
+  #dash-root .ob-pod-rank { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  #dash-root .ob-pod-name { font-size: var(--cds-font-size-caption); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #dash-root .ob-pod-val { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); font-variant-numeric: tabular-nums; }
+  #dash-root .ob-id { align-items: center; }
+  #dash-root .ob-row .lab { display: flex; align-items: center; gap: var(--cds-gap-xs); }
+  #dash-root .ob-row .lab span { overflow: hidden; text-overflow: ellipsis; }
+  #dash-root .ob-tbl td.ob-name { display: flex; align-items: center; gap: var(--cds-gap-xs); }
+
+  /* illustration d'en-tête */
+  #dash-root .ob-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--cds-gap-lg); align-items: end; }
+  #dash-root .ob-art { margin: 0; display: grid; justify-items: center; gap: var(--cds-gap-xs); }
+  #dash-root .ob-art img { display: block; height: 190px; width: auto; }
+  #dash-root .ob-art figcaption { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  #dash-root .ob-art a { color: inherit; }
+  @media (max-width: 36rem) { #dash-root .ob-art img { height: 110px; } }
+
+  /* palier et statistiques */
+  #dash-root .ob-seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; }
+  #dash-root .ob-seg button { all: unset; cursor: pointer; padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  #dash-root .ob-seg button + button { border-left: 1px solid var(--color-border-line); }
+  #dash-root .ob-seg button[aria-checked="true"] { color: var(--color-fg); background: var(--cds-chart-grid); font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-seg button:focus-visible { outline: 2px solid var(--color-fg); outline-offset: -2px; }
+  #dash-root .ob-subhead { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: var(--cds-gap-lg) 0 0; }
+  #dash-root .ob-statsec { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+  #dash-root .ob-pts { display: grid; gap: var(--cds-gap-sm); min-height: 6rem; }
+  #dash-root .ob-pt { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) auto; gap: 2px var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-caption); }
+  #dash-root .ob-pt .lab { color: var(--color-fg-muted); grid-row: span 2; }
+  #dash-root .ob-pt .val { font-variant-numeric: tabular-nums; color: var(--color-fg-muted); text-align: right; min-width: 2.2em; }
+  #dash-root .ob-pt .trk { height: 5px; border-radius: 3px; background: var(--cds-chart-grid); overflow: hidden; }
+  #dash-root .ob-pt .fil { height: 100%; border-radius: 3px; }
+  #dash-root .ob-pts-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-bottom: var(--cds-gap-sm); }
+  #dash-root .ob-pts-legend .dot { display: inline-block; width: .6rem; height: .6rem; border-radius: 2px; margin-right: var(--cds-gap-xs); vertical-align: middle; }
+  #dash-root .ob-sp-wrap { margin-top: var(--cds-gap-lg); }
+  #dash-root .ob-sp tbody tr { cursor: default; }
+  #dash-root .ob-sp tbody tr:hover td { background: inherit; }
+  #dash-root .ob-sp td.pt, #dash-root .ob-sp th.pt { text-align: center; min-width: 3.2em; }
+  #dash-root .ob-sp td.nat { font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-sp tr.other td { color: var(--color-fg-muted); font-style: italic; }
+
+  /* onglets */
+  #dash-root .ob-tabs { display: flex; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); overflow-x: auto; scrollbar-width: none; }
+  #dash-root .ob-tab {
+    all: unset; cursor: pointer; white-space: nowrap; padding: var(--cds-pad-sm) var(--cds-pad-md);
+    color: var(--color-fg-muted); font-size: var(--cds-font-size-body); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  #dash-root .ob-tab:hover { color: var(--color-fg); }
+  #dash-root .ob-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-tab:focus-visible { outline: 2px solid var(--color-fg); outline-offset: -2px; border-radius: var(--cds-radius); }
+  #dash-root .ob-panel { display: grid; gap: var(--cds-gap-lg); }
+  #dash-root .ob-panel[hidden] { display: none; }
+
+  /* quadrants */
+  #dash-root .ob-quad { position: relative; min-height: 440px; }
+  #dash-root .ob-quad svg { display: block; overflow: visible; }
+  #dash-root .ob-quad .pt { cursor: pointer; }
+  #dash-root .ob-quad-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs) var(--cds-gap-md); margin-top: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); min-height: 1.4em; }
+  #dash-root .ob-quad-legend .chip { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
+  #dash-root .ob-quad-legend .dot { width: .6rem; height: .6rem; border-radius: 50%; flex: none; }
+  #dash-root .ob-quad-legend b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: no-preference) {
+    #dash-root .ob-sel-sprite.ob-morph { animation: ob-morph var(--cds-dur-slow) var(--cds-ease-out); }
+    @keyframes ob-morph { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+
+    /* entrée en scène, jouée une seule fois au premier affichage des données */
+    #dash-root .ob-enter { animation: ob-rise var(--cds-dur-slow) var(--cds-ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
+    @keyframes ob-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* micro-interactions */
+    #dash-root .ob-pod { transition: transform var(--cds-dur-slow) var(--cds-ease-out), border-color var(--cds-dur-slow) var(--cds-ease-out); }
+    #dash-root .ob-pod:hover { transform: translateY(-2px); }
+    #dash-root .ob-pod:hover .ob-spr { transform: scale(1.08); }
+    #dash-root .ob-pod .ob-spr { transition: transform var(--cds-dur-slow) var(--cds-ease-out); }
+    #dash-root .ob-chart .bar { transition: fill var(--cds-dur-slow) var(--cds-ease-out); }
+    #dash-root .ob-row .fil { transition: width var(--cds-dur-slow) var(--cds-ease-out); }
+    #dash-root .ob-tbl tbody tr td { transition: background var(--cds-dur-slow) var(--cds-ease-out); }
+  }
+
+  /* évolution */
+  #dash-root .ob-kpi-delta { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin-top: var(--cds-gap-xs); font-variant-numeric: tabular-nums; }
+  #dash-root .ob .ob-kpi-delta b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-evo-body { display: grid; gap: var(--cds-gap-lg); }
+  #dash-root .ob-evo-body[hidden] { display: none; }
+  #dash-root .ob-evo-pick { margin-bottom: 0; }
+  #dash-root .ob-movers { position: relative; min-height: 460px; }
+  #dash-root .ob-dumb { position: relative; min-height: 440px; }
+  #dash-root .ob-qbars { position: relative; min-height: 120px; }
+  #dash-root .ob-traj { position: relative; min-height: 260px; }
+  #dash-root .ob-movers svg, #dash-root .ob-dumb svg, #dash-root .ob-qbars svg, #dash-root .ob-traj svg { display: block; overflow: visible; }
+  #dash-root .ob-movers .hit, #dash-root .ob-dumb .hit { cursor: pointer; }
+  #dash-root .ob-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-bottom: var(--cds-gap-sm); min-height: 1.4em; }
+  #dash-root .ob-legend .sw { display: inline-block; width: .65rem; height: .65rem; border-radius: 50%; margin-right: var(--cds-gap-xs); vertical-align: -1px; box-sizing: border-box; }
+  #dash-root .ob-qs-phrase { font-size: var(--cds-font-size-body); line-height: 1.5; margin: 0 0 var(--cds-gap-md); max-width: 70ch; }
+  #dash-root .ob .ob-qs-phrase b { font-weight: 600; }
+  #dash-root .ob-q { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
+  #dash-root .ob-q .dot { width: .55rem; height: .55rem; border-radius: 50%; flex: none; box-sizing: border-box; }
+  #dash-root .ob-qch-wrap { margin-top: var(--cds-gap-lg); }
+  #dash-root .ob-qch-wrap .ob-tblwrap { max-height: 18rem; }
+  @media (max-width: 30rem) { #dash-root .ob-qch .ob-spr, #dash-root .ob-qch .ob-spr-ph { display: none; } }
+  /* calculateur de dégâts */
+  #dash-root .ob-calc-btn {
+    font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-panel);
+    border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); cursor: pointer; white-space: nowrap;
+  }
+  #dash-root .ob-calc-btn:hover { border-color: var(--color-fg-muted); }
+  #dash-root .ob-calc-btn:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  #dash-root .ob-calc-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--cds-gap-sm) var(--cds-gap-lg); }
+  #dash-root .ob-calc-top .ob-note { margin-bottom: 0; max-width: 62ch; }
+  #dash-root .ob-calc-wait { min-height: 12rem; margin-top: var(--cds-gap-md); border-radius: var(--cds-radius); }
+  #dash-root .ob-calc-out { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); align-items: start; margin-top: var(--cds-gap-md); }
+  #dash-root .ob-calc-out[hidden], #dash-root .ob-calc-grid[hidden], #dash-root .ob-calc-out [hidden] { display: none; }
+  #dash-root .ob-calc-pct { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; line-height: 1.2; text-wrap: balance; }
+  #dash-root .ob-calc-ko { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin-top: var(--cds-gap-xs); line-height: 1.4; }
+  #dash-root .ob-calc-sub, #dash-root .ob-calc-user { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: var(--cds-gap-xs) 0 0; line-height: 1.5; }
+  #dash-root .ob-calc-moves { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); }
+  #dash-root .ob-calc-dir { font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .06em; color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); overflow-wrap: anywhere; }
+  #dash-root .ob-calc-mlist { display: grid; gap: 2px; }
+  #dash-root .ob-calc-mv {
+    all: unset; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--cds-gap-sm); align-items: baseline;
+    padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid transparent; border-radius: var(--cds-radius); font-size: var(--cds-font-size-caption); cursor: pointer;
+  }
+  #dash-root .ob-calc-mv .mv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #dash-root .ob-calc-mv .pct { font-variant-numeric: tabular-nums; color: var(--color-fg-muted); white-space: nowrap; }
+  #dash-root .ob-calc-mv:hover { background: var(--cds-chart-grid); }
+  #dash-root .ob-calc-mv[aria-pressed="true"] { border-color: var(--color-fg-muted); background: var(--cds-chart-grid); font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-calc-mv[aria-pressed="true"] .pct { color: var(--color-fg); }
+  #dash-root .ob-calc-mv:disabled { cursor: default; color: var(--color-fg-muted); background: none; }
+  #dash-root .ob-calc-mv:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 1px; }
+  #dash-root .ob-calc-share { grid-column: 1 / -1; display: flex; gap: var(--cds-gap-sm); align-items: flex-start; }
+  #dash-root .ob-calc-desc {
+    flex: 1; min-width: 0; margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--cds-font-size-caption);
+    line-height: 1.5; background: var(--cds-chart-grid); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); overflow-wrap: anywhere; user-select: all;
+  }
+  #dash-root .ob-calc-foot { grid-column: 1 / -1; display: grid; gap: var(--cds-gap-xs); }
+  #dash-root .ob-calc-foot p, #dash-root .ob-calc-error { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); line-height: 1.5; }
+  #dash-root .ob-calc-rolls { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  #dash-root .ob-calc-error { grid-column: 1 / -1; }
+  #dash-root .ob-calc-grid { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); align-items: start; }
+  #dash-root .ob-calc-grid h2 { margin-bottom: var(--cds-gap-sm); }
+  #dash-root .ob-cp-head { display: flex; align-items: center; gap: var(--cds-gap-sm); flex-wrap: wrap; }
+  #dash-root .ob-cp-head select { font: inherit; font-size: var(--cds-font-size-body); padding: var(--cds-pad-xs) var(--cds-pad-sm); flex: 1 1 9rem; min-width: 0; max-width: 100%; }
+  #dash-root .ob-cp-forme { display: inline-flex; flex: 1 1 8rem; min-width: 0; }
+  #dash-root .ob-cp-forme[hidden] { display: none; }
+  #dash-root .ob-cp-forme select { flex: 1; font-size: var(--cds-font-size-caption); }
+  #dash-root .ob-cp-spr { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; flex: none; }
+  #dash-root .ob-cp-setline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cds-gap-xs) var(--cds-gap-sm); margin: var(--cds-gap-sm) 0 var(--cds-gap-md); }
+  #dash-root .ob-cp-note { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); line-height: 1.45; }
+  #dash-root .ob-cp-fields { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--cds-gap-xs) var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-caption); }
+  #dash-root .ob-cp-fields > label { color: var(--color-fg-muted); }
+  #dash-root .ob-cp-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-xs) var(--cds-gap-sm); min-width: 0; }
+  #dash-root .ob-cp-ctrl > select:first-child { flex: 1 1 8rem; }
+  #dash-root .ob-cp select, #dash-root .ob-calc-field select, #dash-root .ob-cp input[type=number] { font: inherit; font-size: var(--cds-font-size-caption); padding: 2px var(--cds-pad-xs); min-width: 0; max-width: 100%; }
+  #dash-root .ob-cp input[type=number] { width: 4.5em; font-variant-numeric: tabular-nums; }
+  #dash-root .ob-cp-check { display: inline-flex; align-items: center; gap: 4px; color: var(--color-fg-muted); white-space: nowrap; font-size: var(--cds-font-size-caption); }
+  #dash-root .ob-cp-check[hidden], #dash-root .ob-cp select[hidden] { display: none; }
+  #dash-root .ob-cp-stats { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; margin-top: var(--cds-gap-md); }
+  #dash-root .ob-cp-stats th, #dash-root .ob-cp-stats td { padding: 2px var(--cds-pad-xs); border-bottom: 1px solid var(--color-border-line); text-align: left; font-weight: 400; }
+  #dash-root .ob-cp-stats thead th { color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-cp-stats th.num, #dash-root .ob-cp-stats td.num { text-align: right; }
+  #dash-root .ob-cp-stats .ob-cp-total { font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-cp-sptot { margin-top: var(--cds-gap-xs); }
+  #dash-root .ob-cp-sptot.ob-cp-over { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-cp-sptot.ob-cp-over::before { content: ""; display: inline-block; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); margin-right: var(--cds-gap-xs); vertical-align: middle; }
+  #dash-root .ob-cp-sub { font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .06em; color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); margin: var(--cds-gap-lg) 0 var(--cds-gap-xs); }
+  #dash-root .ob-cp-moves { display: grid; gap: var(--cds-gap-sm); }
+  #dash-root .ob-cp-move { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--cds-gap-sm); }
+  #dash-root .ob-cp-move select.mv { flex: 1 1 10rem; }
+  #dash-root .ob-cp-mopts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-xs) var(--cds-gap-md); }
+  #dash-root .ob-cf-auto { margin-top: var(--cds-gap-sm); }
+  #dash-root .ob-cf-auto[hidden] { display: none; }
+  #dash-root .ob-cf-sides th.ob-cf-c, #dash-root .ob-cf-sides td.ob-cf-c { text-align: center; width: 4.5rem; }
+  #dash-root .ob-calc-field .ob-cp-fields { margin-top: var(--cds-gap-xs); }
+  #dash-root .ob-calc-field .ob-cp-fields select { width: 100%; }
+  #dash-root .ob-calc-field .ob-cf-sides + .ob-cp-note { margin-top: var(--cds-gap-sm); }
+  #dash-root .ob-calc-bar {
+    all: unset; box-sizing: border-box; position: sticky; bottom: var(--cds-gap-sm); z-index: 2; display: flex; flex-wrap: wrap; align-items: baseline;
+    gap: 2px var(--cds-gap-md); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; font-size: var(--cds-font-size-caption);
+    background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover);
+  }
+  #dash-root .ob-calc-bar[hidden] { display: none; }
+  #dash-root .ob-calc-bar .mv { color: var(--color-fg-muted); }
+  #dash-root .ob-calc-bar b { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-heading); font-variant-numeric: tabular-nums; }
+  #dash-root .ob-calc-credit { margin: 0; }
+  #dash-root .ob-calc-credit a { color: inherit; }
+  #dash-root .ob-pick .ob-to-calc { margin-left: auto; }
+</style>
+
+<script src="sprites-1.js"></script>
+<script src="sprites-2.js"></script>
+<script src="sprites-3.js"></script>
+<script src="sprites-4.js"></script>
+<script src="art.js"></script>
+<script src="calc-moteur.js"></script>
+
+<div class="ob">
+  <header class="ob-head" id="synthese">
+    <div class="ob-head-txt">
+    <h1>VGC Meta Overview, régulation <span data-source="periode" data-field="regulation" data-row="0">M-C</span></h1>
+    <p class="ob-sub">Pokémon Champions · ladder Smogon Bo3 · <span class="dash-skeleton" data-source="periode" data-field="mois_libelle" data-row="0">—</span>, <span class="dash-skeleton" data-source="periode" data-field="rang_mois" data-row="0">—</span> mois de la régulation · usage pondéré au palier 1500</p>
+    </div>
+    <figure class="ob-art" hidden>
+      <span class="ob-art-img"></span>
+      <figcaption>Illustration : <a href="https://www.instagram.com/walkozuki/" target="_blank" rel="noopener">@walkozuki</a></figcaption>
+    </figure>
+  </header>
+
+  <nav class="ob-tabs" role="tablist" aria-label="Sections du tableau de bord">
+    <button type="button" class="ob-tab" role="tab" id="tab-apercu" data-tab="apercu" aria-controls="apercu" aria-selected="true">Vue d'ensemble</button>
+    <button type="button" class="ob-tab" role="tab" id="tab-evolution" data-tab="evolution" aria-controls="evolution" aria-selected="false" tabindex="-1">Évolution</button>
+    <button type="button" class="ob-tab" role="tab" id="tab-pokemon" data-tab="pokemon" aria-controls="pokemon" aria-selected="false" tabindex="-1">Fiche Pokémon</button>
+    <button type="button" class="ob-tab" role="tab" id="tab-classement" data-tab="classement" aria-controls="classement" aria-selected="false" tabindex="-1">Classement</button>
+    <button type="button" class="ob-tab" role="tab" id="tab-calculateur" data-tab="calculateur" aria-controls="calculateur" aria-selected="false" tabindex="-1">Calculateur</button>
+  </nav>
+
+  <div class="ob-panel" id="apercu" role="tabpanel" aria-labelledby="tab-apercu">
+    <p class="ob-lead">
+      <b class="dash-skeleton" data-source="usage" data-field="pokemon" data-row="0">—</b>
+      domine le format : il figure dans
+      <b class="dash-skeleton" data-source="usage" data-field="usage" data-row="0">—</b>
+      des équipes. Le top 10 occupe
+      <b class="dash-skeleton" data-source="synthese" data-field="part_top10" data-row="0">—</b>
+      des emplacements d'équipe.
+    </p>
+    <div class="ob-podium" aria-label="Les six Pokémon les plus joués">
+      <button type="button" class="ob-pod" data-i="0">
+        <span class="ob-pod-spr"></span>
+        <span class="ob-pod-txt">
+          <span class="ob-pod-rank">1er</span>
+          <span class="ob-pod-name dash-skeleton" data-source="usage" data-field="pokemon" data-row="0">—</span>
+          <span class="ob-pod-val dash-skeleton" data-source="usage" data-field="usage" data-row="0">—</span>
+        </span>
+      </button>
+      <button type="button" class="ob-pod" data-i="1">
+        <span class="ob-pod-spr"></span>
+        <span class="ob-pod-txt">
+          <span class="ob-pod-rank">2e</span>
+          <span class="ob-pod-name dash-skeleton" data-source="usage" data-field="pokemon" data-row="1">—</span>
+          <span class="ob-pod-val dash-skeleton" data-source="usage" data-field="usage" data-row="1">—</span>
+        </span>
+      </button>
+      <button type="button" class="ob-pod" data-i="2">
+        <span class="ob-pod-spr"></span>
+        <span class="ob-pod-txt">
+          <span class="ob-pod-rank">3e</span>
+          <span class="ob-pod-name dash-skeleton" data-source="usage" data-field="pokemon" data-row="2">—</span>
+          <span class="ob-pod-val dash-skeleton" data-source="usage" data-field="usage" data-row="2">—</span>
+        </span>
+      </button>
+      <button type="button" class="ob-pod" data-i="3">
+        <span class="ob-pod-spr"></span>
+        <span class="ob-pod-txt">
+          <span class="ob-pod-rank">4e</span>
+          <span class="ob-pod-name dash-skeleton" data-source="usage" data-field="pokemon" data-row="3">—</span>
+          <span class="ob-pod-val dash-skeleton" data-source="usage" data-field="usage" data-row="3">—</span>
+        </span>
+      </button>
+      <button type="button" class="ob-pod" data-i="4">
+        <span class="ob-pod-spr"></span>
+        <span class="ob-pod-txt">
+          <span class="ob-pod-rank">5e</span>
+          <span class="ob-pod-name dash-skeleton" data-source="usage" data-field="pokemon" data-row="4">—</span>
+          <span class="ob-pod-val dash-skeleton" data-source="usage" data-field="usage" data-row="4">—</span>
+        </span>
+      </button>
+      <button type="button" class="ob-pod" data-i="5">
+        <span class="ob-pod-spr"></span>
+        <span class="ob-pod-txt">
+          <span class="ob-pod-rank">6e</span>
+          <span class="ob-pod-name dash-skeleton" data-source="usage" data-field="pokemon" data-row="5">—</span>
+          <span class="ob-pod-val dash-skeleton" data-source="usage" data-field="usage" data-row="5">—</span>
+        </span>
+      </button>
+    </div>
+    <section class="ob-kpis" id="indicateurs" aria-label="Indicateurs clés">
+    <div class="ob-kpi">
+      <div class="ob-kpi-label">Équipes analysées</div>
+      <div class="ob-kpi-value dash-skeleton" data-source="synthese" data-field="equipes" data-row="0">—</div>
+      <div class="ob-kpi-delta" hidden><b data-source="variation_synthese" data-field="equipes_variation" data-row="0">—</b> par rapport à <span data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span></div>
+      <div class="ob-kpi-note">Deux équipes par bataille jouée</div>
+    </div>
+    <div class="ob-kpi">
+      <div class="ob-kpi-label">Pokémon joués</div>
+      <div class="ob-kpi-value dash-skeleton" data-source="synthese" data-field="nb_pokemon" data-row="0">—</div>
+      <div class="ob-kpi-delta" hidden><b data-source="variation_synthese" data-field="nb_pokemon_ecart" data-row="0">—</b> par rapport à <span data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span></div>
+      <div class="ob-kpi-note">Au moins une apparition</div>
+    </div>
+    <div class="ob-kpi">
+      <div class="ob-kpi-label">Pokémon au-dessus de 5 %</div>
+      <div class="ob-kpi-value dash-skeleton" data-source="synthese" data-field="nb_sup5" data-row="0">—</div>
+      <div class="ob-kpi-delta" hidden><b data-source="variation_synthese" data-field="nb_sup5_ecart" data-row="0">—</b> par rapport à <span data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span></div>
+      <div class="ob-kpi-note">Présents dans plus d'une équipe sur vingt</div>
+    </div>
+    <div class="ob-kpi">
+      <div class="ob-kpi-label">Part du top 10</div>
+      <div class="ob-kpi-value dash-skeleton" data-source="synthese" data-field="part_top10" data-row="0">—</div>
+      <div class="ob-kpi-delta" hidden><b data-source="variation_synthese" data-field="part_top10_ecart_pts" data-row="0">—</b> par rapport à <span data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span></div>
+      <div class="ob-kpi-note">Des emplacements d'équipe</div>
+    </div>
+  </section>
+    <div class="ob-grid">
+    <section class="ob-card" id="top20">
+      <h2>Les 20 Pokémon les plus joués</h2>
+      <p class="ob-note">Part des équipes qui l'incluent. Clique une barre pour ouvrir sa fiche.</p>
+      <div class="ob-chart" data-source="usage"></div>
+    </section>
+    <section class="ob-card" id="quadrants">
+      <h2>Popularité et adoption par l'élite</h2>
+      <p class="ob-note">Popularité (usage) face à la sur-représentation chez l'élite : usage parmi les joueurs à 1760 et plus, divisé par l'usage sur tout le ladder. Pokémon au-dessus de 1 % d'usage, échelles logarithmiques. Clique un point pour ouvrir sa fiche.</p>
+      <div class="ob-quad" data-source="quadrants seuils"></div>
+      <div class="ob-quad-legend" data-source="quadrants"></div>
+    </section>
+    </div>
+  </div>
+
+  <div class="ob-panel" id="evolution" role="tabpanel" aria-labelledby="tab-evolution" hidden>
+    <p class="ob-lead ob-evo-lead">
+      Entre <span class="dash-skeleton" data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span>
+      et <span class="dash-skeleton" data-source="periode" data-field="mois_nom" data-row="0">—</span>,
+      <b class="dash-skeleton" data-source="faits_marquants" data-field="baisse_pokemon" data-row="0">—</b> recule le plus
+      (<b class="dash-skeleton" data-source="faits_marquants" data-field="baisse_pts" data-row="0">—</b>) et
+      <b class="dash-skeleton" data-source="faits_marquants" data-field="hausse_pokemon" data-row="0">—</b> progresse le plus
+      (<b class="dash-skeleton" data-source="faits_marquants" data-field="hausse_pts" data-row="0">—</b>), au palier 1500.
+    </p>
+    <p class="ob-empty ob-evo-wait" hidden>Les évolutions s'afficheront dès le deuxième mois publié de la régulation.</p>
+    <div class="ob-evo-body">
+      <div class="ob-pick ob-evo-pick">
+        <span class="ob-id-stat">Palier</span>
+        <div class="ob-seg" role="radiogroup" aria-label="Palier de classement">
+          <button type="button" role="radio" data-palier="0">Tous les joueurs</button>
+          <button type="button" role="radio" data-palier="1500">1500</button>
+          <button type="button" role="radio" data-palier="1630">1630</button>
+          <button type="button" role="radio" data-palier="1760">Élite (1760)</button>
+        </div>
+      </div>
+      <div class="ob-grid">
+        <section class="ob-card" id="hausses-baisses">
+          <h2>Les plus fortes hausses et baisses</h2>
+          <p class="ob-note">Écart d'usage en points entre <span data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span> et <span data-source="periode" data-field="mois_nom" data-row="0">—</span> (<span class="ob-pal-lab">palier 1500</span>), parmi les Pokémon à 1 % d'usage ou plus l'un des deux mois. Un point vaut un pour cent des équipes. Clique une barre pour ouvrir sa fiche.</p>
+          <div class="ob-movers" data-source="variations"></div>
+        </section>
+        <section class="ob-card" id="top15">
+          <h2>Le top 15 face au mois précédent</h2>
+          <p class="ob-note">Les 15 Pokémon les plus joués (<span class="ob-pal-lab">palier 1500</span>), avec leur usage et leur rang du mois précédent. Clique une ligne pour ouvrir sa fiche.</p>
+          <div class="ob-legend ob-dumb-legend" data-source="periode"></div>
+          <div class="ob-dumb" data-source="variations"></div>
+        </section>
+      </div>
+      <div class="ob-grid">
+        <section class="ob-card" id="devenir-quadrants">
+          <h2>Que sont devenus les quadrants du mois précédent ?</h2>
+          <p class="ob-note">Écart médian d'usage au palier 1500 entre <span data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span> et <span data-source="periode" data-field="mois_nom" data-row="0">—</span>, selon le quadrant de <span data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span> (Pokémon à 1 % d'usage ou plus ce mois-là, mêmes seuils que le nuage de la vue d'ensemble). Un mois d'écart et de petits groupes : une tendance à confirmer.</p>
+          <p class="ob-qs-phrase" hidden>
+            À popularité comparable, les Pokémon que l'élite jouait davantage en <span data-source="periode" data-field="mois_precedent_nom" data-row="0">—</span>
+            ont évolué <span class="ob-qs-verdict">—</span> en <span data-source="periode" data-field="mois_nom" data-row="0">—</span> : écart médian de
+            <b data-source="quadrants_bilan" data-where="quadrant=Pépite" data-field="ecart_median_pts">—</b> pour les pépites contre
+            <b data-source="quadrants_bilan" data-where="quadrant=Niche" data-field="ecart_median_pts">—</b> pour les niches, et de
+            <b data-source="quadrants_bilan" data-where="quadrant=Staple" data-field="ecart_median_pts">—</b> pour les staples contre
+            <b data-source="quadrants_bilan" data-where="quadrant=Piège" data-field="ecart_median_pts">—</b> pour les pièges.
+          </p>
+          <div class="ob-qbars" data-source="quadrants_bilan"></div>
+          <div class="ob-sec ob-qch-wrap">
+            <h3>Changements de quadrant</h3>
+            <p class="ob-empty ob-qch-empty" hidden>Aucun Pokémon n'a changé de quadrant.</p>
+            <div class="ob-tblwrap">
+              <table class="ob-tbl ob-qch" data-source="quadrants_suivi" data-row-key="pokemon">
+                <thead><tr>
+                  <th data-field="pokemon">Pokémon</th>
+                  <th data-field="quadrant_avant" class="ob-qch-avant">Mois précédent</th>
+                  <th data-field="quadrant" class="ob-qch-apres">Dernier mois</th>
+                  <th class="num" data-field="ecart_pts">Écart (pts)</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        <section class="ob-card" id="trajectoire">
+          <h2>Trajectoire d'un Pokémon</h2>
+          <p class="ob-note">Usage de chaque mois de la régulation, aux quatre paliers. Le palier choisi en haut de l'onglet est mis en avant.</p>
+          <div class="ob-pick">
+            <label for="ob-select-evo" class="ob-id-stat">Pokémon</label>
+            <select id="ob-select-evo" data-source="usage"></select>
+          </div>
+          <div class="ob-traj" data-source="usage_mensuel"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="ob-panel" id="pokemon" role="tabpanel" aria-labelledby="tab-pokemon" hidden>
+  <section class="ob-card" id="fiche">
+      <h2>Fiche Pokémon</h2>
+      <p class="ob-note">Comment il est joué, et avec qui.</p>
+      <div class="ob-pick">
+        <label for="ob-select" class="ob-id-stat">Pokémon</label>
+        <select id="ob-select" data-source="usage"></select>
+        <div class="ob-seg" role="radiogroup" aria-label="Palier de classement">
+          <button type="button" role="radio" data-palier="0">Tous les joueurs</button>
+          <button type="button" role="radio" data-palier="1500">1500</button>
+          <button type="button" role="radio" data-palier="1630">1630</button>
+          <button type="button" role="radio" data-palier="1760">Élite (1760)</button>
+        </div>
+        <button type="button" class="ob-calc-btn ob-to-calc">Calculer ses dégâts</button>
+      </div>
+      <div class="ob-id">
+        <span class="ob-sel-sprwrap"></span>
+        <span class="ob-id-name ob-sel-name" data-source="usage" data-where="pokemon=Rillaboom" data-field="pokemon">—</span>
+        <span class="ob-id-stat"><span class="ob-usage-lab">Usage</span> <b class="ob-sel-usage" data-source="usage" data-where="pokemon=Rillaboom" data-field="usage">—</b></span>
+        <span class="ob-id-stat">Rang <b class="ob-sel-rang" data-source="usage" data-where="pokemon=Rillaboom" data-field="rang">—</b></span>
+        <span class="ob-id-stat">Élite / ladder <b class="ob-sel-ie" data-source="usage" data-where="pokemon=Rillaboom" data-field="indice_elite">—</b></span>
+        <span class="ob-id-stat">Viability ceiling <b class="ob-sel-vc" data-source="usage" data-where="pokemon=Rillaboom" data-field="viability_ceiling">—</b></span>
+      </div>
+      <div class="ob-sections">
+        <div class="ob-sec"><h3>Objets</h3><div class="ob-list ob-items" data-source="builds"></div></div>
+        <div class="ob-sec"><h3>Capacités</h3><div class="ob-list ob-moves" data-source="builds"></div></div>
+        <div class="ob-sec"><h3>Talents</h3><div class="ob-list ob-abil" data-source="builds"></div></div>
+        <div class="ob-sec"><h3>Coéquipiers fréquents</h3><div class="ob-list ob-team" data-source="coequipiers"></div></div>
+      </div>
+      <h3 class="ob-subhead">Répartition des statistiques</h3>
+      <p class="ob-note ob-cov" data-source="points_moyens"></p>
+      <div class="ob-sections ob-statsec">
+        <div class="ob-sec"><h3>Natures</h3><div class="ob-list ob-nat" data-source="natures"></div></div>
+        <div class="ob-sec ob-sec-pts"><h3>Points moyens par statistique</h3><div class="ob-pts-legend"></div><div class="ob-pts" data-source="points_moyens"></div></div>
+      </div>
+      <div class="ob-sec ob-sp-wrap">
+        <h3>Spreads détaillés par Smogon</h3>
+        <p class="ob-empty ob-sp-empty" hidden>Aucun spread détaillé pour ce Pokémon à ce palier.</p>
+        <div class="ob-tblwrap">
+          <table class="ob-tbl ob-sp" data-source="builds" data-row-key="pokemon,palier,valeur">
+            <thead><tr>
+              <th data-field="valeur">Nature</th>
+              <th class="pt">PV</th><th class="pt">Attaque</th><th class="pt">Défense</th>
+              <th class="pt">Atq. Spé.</th><th class="pt">Déf. Spé.</th><th class="pt">Vitesse</th>
+              <th class="num" data-field="adoption">Part des équipes</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  <section class="ob-card" id="menaces">
+    <h2>Menaces du Pokémon sélectionné</h2>
+    <p class="ob-note">Adversaires qui le mettent en difficulté. Smogon ne calcule ces matchups que pour les Pokémon les plus joués.</p>
+    <p class="ob-empty ob-ctr-empty" hidden>Pas de données de confrontation pour ce Pokémon à ce palier ce mois-ci.</p>
+    <div class="ob-tblwrap">
+      <table class="ob-tbl ob-ctr" data-source="counters" data-row-key="pokemon,adversaire">
+        <thead><tr>
+          <th data-field="adversaire">Adversaire</th>
+          <th class="num" data-field="score_matchup">Score de matchup</th>
+          <th class="num" data-field="taux_ko">Mis K.O.</th>
+          <th class="num" data-field="taux_switch">Forcé à sortir</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div class="ob-panel" id="classement" role="tabpanel" aria-labelledby="tab-classement" hidden>
+  <section class="ob-card" id="table-classement">
+    <h2>Classement complet</h2>
+    <p class="ob-note">Tous les Pokémon joués ce mois-ci. Trie par colonne, cherche par nom, clique une ligne pour ouvrir sa fiche.</p>
+    <input id="ob-search" class="ob-search" type="search" placeholder="Chercher un Pokémon" aria-label="Chercher un Pokémon">
+    <div class="ob-tblwrap">
+      <table class="ob-tbl ob-rank" data-source="usage" data-row-key="pokemon">
+        <thead><tr>
+          <th class="num" data-field="rang"><button type="button" data-sort="rang">Rang</button></th>
+          <th data-field="pokemon"><button type="button" data-sort="pokemon">Pokémon</button></th>
+          <th data-field="usage"><button type="button" data-sort="usage">Usage</button></th>
+          <th class="num" data-field="indice_elite"><button type="button" data-sort="indice_elite">Élite / ladder</button></th>
+          <th class="num hide-sm" data-field="apparitions"><button type="button" data-sort="apparitions">Apparitions</button></th>
+          <th class="num hide-sm" data-field="viability_ceiling"><button type="button" data-sort="viability_ceiling">Viability ceiling</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div class="ob-panel" id="calculateur" role="tabpanel" aria-labelledby="tab-calculateur" hidden>
+  <section class="ob-card" id="calcul">
+    <div class="ob-calc-top">
+      <div>
+        <h2>Calculateur de dégâts</h2>
+        <p class="ob-note">Chaque Pokémon arrive avec son set le plus joué du dernier mois : objet, talent, spread et quatre capacités. Tout se modifie, et le calcul se refait à chaque changement. Clique une capacité pour voir son détail.</p>
+      </div>
+      <button type="button" class="ob-calc-btn ob-calc-swap" hidden>Inverser A et B</button>
+    </div>
+    <div class="ob-calc-wait dash-skeleton" data-source="calculateur"></div>
+    <div class="ob-calc-out" hidden>
+      <div class="ob-calc-head" aria-live="polite">
+        <div class="ob-calc-pct"></div>
+        <div class="ob-calc-ko"></div>
+        <p class="ob-calc-sub"></p>
+        <p class="ob-calc-user" hidden></p>
+      </div>
+      <div class="ob-calc-moves">
+        <div><h3 class="ob-calc-dir" data-side="0"></h3><div class="ob-calc-mlist" data-side="0" role="group"></div></div>
+        <div><h3 class="ob-calc-dir" data-side="1"></h3><div class="ob-calc-mlist" data-side="1" role="group"></div></div>
+      </div>
+      <div class="ob-calc-share">
+        <p class="ob-calc-desc" lang="en"></p>
+        <button type="button" class="ob-calc-btn ob-calc-copy">Copier</button>
+      </div>
+      <div class="ob-calc-foot">
+        <p class="ob-calc-rolls"></p>
+        <p class="ob-calc-speed"></p>
+      </div>
+      <p class="ob-calc-error" hidden></p>
+    </div>
+  </section>
+  <div class="ob-calc-grid" hidden>
+    <section class="ob-card ob-cp" data-side="0" aria-labelledby="calc-titre-a"><h2 id="calc-titre-a">Pokémon A</h2></section>
+    <section class="ob-card ob-cp" data-side="1" aria-labelledby="calc-titre-b"><h2 id="calc-titre-b">Pokémon B</h2></section>
+    <section class="ob-card ob-calc-field" aria-labelledby="calc-titre-terrain"><h2 id="calc-titre-terrain">Terrain</h2><div class="ob-calc-field-body"></div></section>
+  </div>
+  <button type="button" class="ob-calc-bar" tabindex="-1" aria-hidden="true" hidden></button>
+  <p class="ob-note ob-calc-credit">Moteur de calcul : <a href="https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator" target="_blank" rel="noopener">Nimbasa City Post VGC Damage Calculator</a> (nerd-of-now et contributeurs), mode Champions, repris sans modification de ses formules sous licence MIT.</p>
+  </div>
+
+  <p class="ob-method" id="methode">
+    Méthode. L'usage est la part des équipes qui incluent un Pokémon, pondérée par le classement des joueurs au palier 1500, telle que publiée par Smogon.
+    Le nombre d'équipes vaut deux fois le nombre de batailles du mois. L'indice élite / ladder divise l'usage au palier 1760 (pondération vers les
+    joueurs les mieux classés) par l'usage au palier 0 (tous les joueurs à égalité) : au-dessus de 1, l'élite le joue davantage que l'ensemble du ladder.
+    Le viability ceiling est le classement le plus élevé atteint avec ce Pokémon.
+    Dans la fiche, le sélecteur de palier filtre objets, capacités, talents, coéquipiers, menaces et spreads. Le tableau des spreads reprend
+    toutes les répartitions détaillées dans le fichier Smogon (six au plus), le reste étant regroupé par Smogon. Les natures et les points moyens
+    par statistique sont calculés sur les spreads détaillés par Smogon, pondérés par leur taux d'adoption ; leur couverture est indiquée, car
+    les répartitions trop rares sont regroupées par Smogon et ne sont pas détaillées.
+    L'onglet Évolution compare le dernier mois au précédent : un écart de 1 point correspond à 1 % des équipes, le rang d'un palier classe les
+    Pokémon par usage décroissant à ce palier, et le devenir des quadrants suit les Pokémon à 1 % d'usage ou plus le mois précédent, classés avec
+    les seuils du nuage. Sources : fichiers d'usage et moveset Smogon
+    <span data-source="periode" data-field="format_id" data-row="0">gen9championsvgc2026regmcbo3</span> (régulation
+    <span data-source="periode" data-field="regulation" data-row="0">M-C</span>, format Bo3), paliers 0, 1500, 1630 et 1760, de chaque mois publié
+    depuis le début de la régulation ; la vue d'ensemble, la fiche et le classement portent sur le dernier,
+    <span class="dash-skeleton" data-source="periode" data-field="mois_libelle" data-row="0">—</span>. Données ingérées chaque mois par le pipeline vgc-meta-observatory.
+    L'onglet Calculateur reprend le moteur du Nimbasa City Post VGC Damage Calculator (nerd-of-now et contributeurs, licence MIT) en mode
+    Champions : niveau 50, IV à 31 et points de statistique, 32 au plus par statistique et 66 au total. Chaque Pokémon y arrive avec l'objet,
+    le talent, le spread et les quatre capacités les plus adoptés du dernier mois, au palier choisi dans la fiche.
+    Sprites : dépôt public smogon/sprites, série Pokémon Champions. Illustration d'en-tête : commande personnelle à l'artiste @walkozuki. Pokémon © Nintendo, Creatures, GAME FREAK et The Pokémon Company ;
+    projet de fan non commercial.
+  </p>
+</div>
+
+<script>
+  dash.calc('usage_mensuel', {
+    title: 'Usage par Pokémon, chaque mois',
+    description: "Usage pondéré publié par Smogon aux paliers 0, 1500 (référence), 1630 et 1760, pour chaque mois de la régulation, et indice élite / ladder = usage au palier 1760 ÷ usage au palier 0.",
+    inputs: ['pokemon'],
+    fn: (pokemon) => pokemon.map((r) => {
+      const ladder = Number(r.usage_ladder), elite = Number(r.usage_elite);
+      return {
+        mois: String(r.mois),
+        rang: Number(r.rang),
+        pokemon: r.pokemon,
+        usage: Number(r.usage),
+        usage_ladder: ladder,
+        usage_elite: elite,
+        usage_1630: Number(r.usage_1630),
+        indice_elite: ladder > 0 ? elite / ladder : null,
+        apparitions: Number(r.apparitions),
+        viability_ceiling: r.viability_ceiling == null ? null : Number(r.viability_ceiling),
+      };
+    }),
+  });
+
+  dash.calc('usage', {
+    title: 'Usage par Pokémon, dernier mois',
+    description: "Les lignes du dernier mois publié, classées par rang au palier 1500.",
+    inputs: ['usage_mensuel'],
+    fn: (usage_mensuel) => {
+      const dernier = usage_mensuel.reduce((m, r) => (r.mois > m ? r.mois : m), '');
+      return usage_mensuel.filter((r) => r.mois === dernier).sort((a, b) => a.rang - b.rang);
+    },
+  });
+
+  dash.calc('periode', {
+    title: 'Mois couverts',
+    description: "Mois publiés par Smogon pour la régulation suivie : le dernier, le précédent, leur nombre, la régulation et le format.",
+    inputs: ['instantanes'],
+    fn: (instantanes) => {
+      const mois = [...new Set(instantanes.map((r) => String(r.mois)))].sort();
+      if (!mois.length) return [];
+      const nom = (m, avecAnnee) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString('fr-FR', avecAnnee ? { month: 'long', year: 'numeric', timeZone: 'UTC' } : { month: 'long', timeZone: 'UTC' });
+      const dernier = mois[mois.length - 1];
+      const precedent = mois.length > 1 ? mois[mois.length - 2] : null;
+      const memeAnnee = !precedent || precedent.slice(0, 4) === dernier.slice(0, 4);
+      const ordinaux = ['premier', 'deuxième', 'troisième', 'quatrième', 'cinquième', 'sixième', 'septième', 'huitième', 'neuvième', 'dixième', 'onzième', 'douzième'];
+      const ref = instantanes.find((r) => String(r.mois) === dernier) || {};
+      return [{
+        mois: dernier,
+        mois_libelle: nom(dernier, true),
+        mois_nom: nom(dernier, !memeAnnee),
+        mois_precedent: precedent,
+        mois_precedent_nom: precedent ? nom(precedent, !memeAnnee) : null,
+        nb_mois: mois.length,
+        rang_mois: ordinaux[mois.length - 1] || `${mois.length}e`,
+        regulation: ref.regulation ?? null,
+        format_id: ref.format_id ?? null,
+      }];
+    },
+  });
+
+  dash.calc('synthese_mensuelle', {
+    title: 'Synthèse du méta, chaque mois',
+    description: "Pour chaque mois : équipes = 2 × batailles du mois ; Pokémon joués ; Pokémon au-dessus de 5 % d'usage ; part du top 10 dans les emplacements d'équipe (apparitions brutes).",
+    inputs: ['usage_mensuel', 'instantanes'],
+    fn: (usage_mensuel, instantanes) => [...new Set(usage_mensuel.map((r) => r.mois))].sort().map((mois) => {
+      const usage = usage_mensuel.filter((r) => r.mois === mois).sort((a, b) => a.rang - b.rang);
+      const snap = instantanes.find((r) => String(r.mois) === mois && Number(r.palier) === 1500);
+      const total = usage.reduce((s, r) => s + r.apparitions, 0);
+      const top10 = usage.slice(0, 10).reduce((s, r) => s + r.apparitions, 0);
+      return {
+        mois,
+        equipes: snap ? 2 * Number(snap.batailles) : null,
+        nb_pokemon: usage.length,
+        nb_sup5: usage.filter((r) => r.usage > 0.05).length,
+        part_top10: total ? top10 / total : 0,
+      };
+    }),
+  });
+
+  dash.calc('synthese', {
+    title: 'Synthèse du méta',
+    description: "La synthèse du dernier mois publié.",
+    inputs: ['synthese_mensuelle'],
+    fn: (synthese_mensuelle) => synthese_mensuelle.slice(-1),
+  });
+
+  dash.calc('variation_synthese', {
+    title: 'Synthèse : écart avec le mois précédent',
+    description: "Dernier mois comparé au précédent : variation relative du nombre d'équipes, écart du nombre de Pokémon joués et de Pokémon au-dessus de 5 %, écart de la part du top 10 en points.",
+    inputs: ['synthese_mensuelle'],
+    fn: (synthese_mensuelle) => {
+      if (synthese_mensuelle.length < 2) return [];
+      const [avant, apres] = synthese_mensuelle.slice(-2);
+      return [{
+        mois: apres.mois,
+        mois_precedent: avant.mois,
+        equipes_variation: avant.equipes ? apres.equipes / avant.equipes - 1 : null,
+        nb_pokemon_ecart: apres.nb_pokemon - avant.nb_pokemon,
+        nb_sup5_ecart: apres.nb_sup5 - avant.nb_sup5,
+        part_top10_ecart_pts: (apres.part_top10 - avant.part_top10) * 100,
+      }];
+    },
+  });
+
+  const STATS = ['pv', 'atq', 'def', 'atqspe', 'defspe', 'vit'];
+  const lireSpread = (valeur) => {
+    const [nature, evs] = String(valeur).split(':');
+    const pts = (evs || '').split('/').map(Number);
+    return pts.length === 6 && pts.every((v) => Number.isFinite(v)) ? { nature: nature.trim(), pts } : null;
+  };
+
+  dash.calc('natures', {
+    title: 'Natures par Pokémon et palier',
+    description: "Part de chaque nature parmi les spreads détaillés par Smogon (section Spreads du fichier moveset), pondérée par leur taux d'adoption et ramenée à 100 %.",
+    inputs: ['builds'],
+    fn: (builds) => {
+      const acc = new Map();
+      builds.forEach((r) => {
+        if (r.categorie !== 'Spread') return;
+        const sp = lireSpread(r.valeur); if (!sp) return;
+        const k = `${r.pokemon}|${r.palier}`;
+        if (!acc.has(k)) acc.set(k, { pokemon: r.pokemon, palier: Number(r.palier), tot: 0, nat: new Map() });
+        const a = acc.get(k); const w = Number(r.adoption);
+        a.tot += w; a.nat.set(sp.nature, (a.nat.get(sp.nature) || 0) + w);
+      });
+      const out = [];
+      acc.forEach((a) => a.nat.forEach((w, nature) => out.push({ pokemon: a.pokemon, palier: a.palier, nature, part: a.tot ? w / a.tot : 0 })));
+      return out;
+    },
+  });
+
+  dash.calc('points_moyens', {
+    title: 'Points de statistique moyens',
+    description: "Moyenne des points investis dans chaque statistique (PV, Attaque, Défense, Attaque Spéciale, Défense Spéciale, Vitesse ; 32 au maximum) sur les spreads détaillés par Smogon, pondérée par leur taux d'adoption. La couverture est la somme de ces taux : la part des équipes jouant ce Pokémon dont le spread est détaillé.",
+    inputs: ['builds'],
+    fn: (builds) => {
+      const acc = new Map();
+      builds.forEach((r) => {
+        if (r.categorie !== 'Spread') return;
+        const sp = lireSpread(r.valeur); if (!sp) return;
+        const k = `${r.pokemon}|${r.palier}`;
+        if (!acc.has(k)) acc.set(k, { pokemon: r.pokemon, palier: Number(r.palier), w: 0, s: [0, 0, 0, 0, 0, 0] });
+        const a = acc.get(k); const w = Number(r.adoption);
+        a.w += w; sp.pts.forEach((v, i) => { a.s[i] += v * w; });
+      });
+      return [...acc.values()].map((a) => {
+        const row = { pokemon: a.pokemon, palier: a.palier, couverture: a.w };
+        STATS.forEach((st, i) => { row[st] = a.w ? a.s[i] / a.w : 0; });
+        return row;
+      });
+    },
+  });
+
+  dash.calc('seuils', {
+    title: 'Seuils des quadrants',
+    description: "Popularité : 10 % d'usage. Élite : indice 1, c'est-à-dire autant joué par l'élite que par l'ensemble du ladder.",
+    inputs: ['usage'],
+    fn: () => [{ seuil_usage: 0.10, seuil_elite: 1 }],
+  });
+
+  dash.calc('quadrants', {
+    title: 'Quadrants du méta',
+    description: "Pokémon à 1 % d'usage ou plus : Staple (populaire et sur-représenté chez l'élite), Pépite (rare mais sur-représenté chez l'élite), Piège (populaire mais sous-représenté chez l'élite), Niche (ni l'un ni l'autre).",
+    inputs: ['usage', 'seuils'],
+    fn: (usage, seuils) => {
+      const { seuil_usage, seuil_elite } = seuils[0];
+      return usage
+        .filter((r) => r.usage >= 0.01 && r.indice_elite != null)
+        .map((r) => {
+          const pop = r.usage >= seuil_usage, elite = r.indice_elite >= seuil_elite;
+          return {
+            pokemon: r.pokemon, usage: r.usage, indice_elite: r.indice_elite, rang: r.rang,
+            quadrant: pop ? (elite ? 'Staple' : 'Piège') : (elite ? 'Pépite' : 'Niche'),
+          };
+        });
+    },
+  });
+
+  dash.calc('variations', {
+    title: "Écart d'usage avec le mois précédent",
+    description: "Pour chaque Pokémon et chaque palier : usage du mois précédent et du dernier mois, écart en points (un point = 1 % des équipes ; usage 0 pour un mois où il est absent) et rang à ce palier, par usage décroissant.",
+    inputs: ['usage_mensuel'],
+    fn: (usage_mensuel) => {
+      const mois = [...new Set(usage_mensuel.map((r) => r.mois))].sort();
+      if (mois.length < 2) return [];
+      const [avant, apres] = mois.slice(-2);
+      const champs = { 0: 'usage_ladder', 1500: 'usage', 1630: 'usage_1630', 1760: 'usage_elite' };
+      const out = [];
+      Object.entries(champs).forEach(([palier, champ]) => {
+        const classement = (m) => new Map(usage_mensuel.filter((r) => r.mois === m).sort((a, b) => b[champ] - a[champ])
+          .map((r, i) => [r.pokemon, { usage: r[champ], rang: i + 1 }]));
+        const a = classement(avant), b = classement(apres);
+        new Set([...a.keys(), ...b.keys()]).forEach((pokemon) => {
+          const x = a.get(pokemon), y = b.get(pokemon);
+          const usage_avant = x ? x.usage : 0, usage = y ? y.usage : 0;
+          out.push({ pokemon, palier: Number(palier), usage_avant, usage, ecart_pts: (usage - usage_avant) * 100, rang_avant: x ? x.rang : null, rang: y ? y.rang : null });
+        });
+      });
+      return out;
+    },
+  });
+
+  dash.calc('faits_marquants', {
+    title: 'Plus forte hausse et plus forte baisse',
+    description: "Au palier 1500, parmi les Pokémon à 1 % d'usage ou plus l'un des deux mois : la plus forte hausse et la plus forte baisse d'usage, en points.",
+    inputs: ['variations'],
+    fn: (variations) => {
+      const rows = variations.filter((r) => r.palier === 1500 && Math.max(r.usage, r.usage_avant) >= 0.01);
+      if (!rows.length) return [];
+      const hausse = rows.reduce((m, r) => (r.ecart_pts > m.ecart_pts ? r : m));
+      const baisse = rows.reduce((m, r) => (r.ecart_pts < m.ecart_pts ? r : m));
+      return [{ hausse_pokemon: hausse.pokemon, hausse_pts: hausse.ecart_pts, baisse_pokemon: baisse.pokemon, baisse_pts: baisse.ecart_pts }];
+    },
+  });
+
+  dash.calc('quadrants_suivi', {
+    title: 'Devenir des quadrants du mois précédent',
+    description: "Pokémon à 1 % d'usage ou plus le mois précédent : leur quadrant ce mois-là et le dernier mois (mêmes seuils que le nuage ; « Sous 1 % » s'il passe sous 1 % d'usage), et l'écart d'usage au palier 1500 en points.",
+    inputs: ['usage_mensuel', 'seuils'],
+    fn: (usage_mensuel, seuils) => {
+      const mois = [...new Set(usage_mensuel.map((r) => r.mois))].sort();
+      if (mois.length < 2) return [];
+      const [avant, apres] = mois.slice(-2);
+      const { seuil_usage, seuil_elite } = seuils[0];
+      const quadrant = (r) => (!r || r.usage < 0.01 || r.indice_elite == null ? 'Sous 1 %'
+        : r.usage >= seuil_usage ? (r.indice_elite >= seuil_elite ? 'Staple' : 'Piège') : (r.indice_elite >= seuil_elite ? 'Pépite' : 'Niche'));
+      const duMois = (m) => new Map(usage_mensuel.filter((r) => r.mois === m).map((r) => [r.pokemon, r]));
+      const a = duMois(avant), b = duMois(apres);
+      return [...a.values()].filter((r) => quadrant(r) !== 'Sous 1 %').map((r) => {
+        const y = b.get(r.pokemon);
+        const usage = y ? y.usage : 0;
+        return { pokemon: r.pokemon, quadrant_avant: quadrant(r), quadrant: quadrant(y), usage_avant: r.usage, usage, ecart_pts: (usage - r.usage) * 100 };
+      });
+    },
+  });
+
+  dash.calc('quadrants_bilan', {
+    title: 'Bilan par quadrant du mois précédent',
+    description: "Pour chaque quadrant du mois précédent : nombre de Pokémon, écart médian d'usage au palier 1500 en points, et part des Pokémon dont l'usage a augmenté.",
+    inputs: ['quadrants_suivi'],
+    fn: (quadrants_suivi) => ['Staple', 'Pépite', 'Piège', 'Niche'].map((quadrant) => {
+      const e = quadrants_suivi.filter((r) => r.quadrant_avant === quadrant).map((r) => r.ecart_pts).sort((a, b) => a - b);
+      const n = e.length;
+      const mediane = n ? (n % 2 ? e[(n - 1) / 2] : (e[n / 2 - 1] + e[n / 2]) / 2) : null;
+      return { quadrant, nb: n, ecart_median_pts: mediane, part_hausse: n ? e.filter((v) => v > 0).length / n : null };
+    }),
+  });
+</script>
+
+<script>
+  const fmtPct = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  const fmtInt = new Intl.NumberFormat('fr-FR');
+  const fmtScore = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  const enc = (s) => encodeURIComponent(s);
+  const root = document.getElementById('dash-root');
+  const q = (s) => root.querySelector(s);
+  const qa = (s) => [...root.querySelectorAll(s)];
+
+  const state = { sort: 'rang', dir: 1, search: '' };
+  const reduce = () => !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let entered = false;
+
+  // compte progressif d'une valeur, qui finit exactement sur le texte formaté
+  const countUp = (el, target, fmt, delay = 0) => {
+    if (reduce()) { el.textContent = fmt(target); return; }
+    const start = performance.now() + delay, dur = 700, ease = d3.easeCubicOut;
+    el.textContent = fmt(0);
+    const step = (now) => {
+      const t = Math.min(1, Math.max(0, (now - start) / dur));
+      el.textContent = fmt(t >= 1 ? target : target * ease(t));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  const SPR = window.OB_SPRITES || {};
+  // illustration commandée à @walkozuki, insérée si le fichier est chargé
+  (() => {
+    const uri = (window.OB_ART || {}).dragona;
+    const fig = root.querySelector('.ob-art');
+    if (!uri || !fig) return;
+    const img = document.createElement('img');
+    img.src = uri; img.width = 186; img.height = 190; img.decoding = 'async';
+    img.alt = 'Illustration : une dresseuse et son Pokémon, dans un style inspiré de JoJo';
+    fig.querySelector('.ob-art-img').replaceWith(img);
+    fig.hidden = false;
+  })();
+  const sprite = (name, px) => {
+    const uri = SPR[name];
+    if (!uri) { const ph = document.createElement('span'); ph.className = 'ob-spr-ph'; ph.style.width = ph.style.height = `${Math.round(px * .7)}px`; return ph; }
+    const img = document.createElement('img'); img.className = 'ob-spr'; img.src = uri; img.alt = ''; img.width = px; img.height = px; img.decoding = 'async';
+    return img;
+  };
+  const selected = () => dash.params().pokemon || 'Rillaboom';
+  const PALIERS = [0, 1500, 1630, 1760];
+  const selPalier = () => { const v = Number(dash.params().palier); return PALIERS.includes(v) ? v : 1500; };
+  const USAGE_FIELD = { 0: 'usage_ladder', 1500: 'usage', 1630: 'usage_1630', 1760: 'usage_elite' };
+  const PALIER_LABEL = { 0: 'tous les joueurs', 1500: 'palier 1500', 1630: 'palier 1630', 1760: 'élite, palier 1760' };
+  const pick = (name) => { if (name) dash.setParams({ pokemon: name }); };
+
+  const settle = (els, status) => {
+    els.forEach((el) => { if (status !== 'loading') el.classList.remove('dash-skeleton'); });
+  };
+  const failLine = (el) => { el.replaceChildren(); const d = document.createElement('div'); d.className = 'ob-fail'; d.textContent = 'Échec du chargement'; el.append(d); };
+
+  // ---------- en-tête et indicateurs ----------
+  function drawHead(u, s) {
+    const marks = qa('#apercu .ob-lead [data-row="0"], .ob-kpis .ob-kpi-value[data-row="0"]');
+    if (u.status !== 'ok' || s.status !== 'ok') { marks.forEach((el) => { el.textContent = '—'; }); settle(marks, u.status === 'loading' || s.status === 'loading' ? 'loading' : 'done'); return; }
+    const top = u.data[0], syn = s.data[0];
+    marks.forEach((el) => {
+      const f = el.dataset.field, src = el.dataset.source;
+      const row = src === 'usage' ? top : syn;
+      const v = row[f];
+      el.textContent = f === 'pokemon' ? v : (f === 'usage' || f === 'part_top10') ? fmtPct.format(v) : fmtInt.format(v);
+    });
+    settle(marks, 'ok');
+  }
+
+  // ---------- podium ----------
+  qa('.ob-pod').forEach((b) => b.addEventListener('click', () => {
+    const u = dash.data('usage'); const r = u.status === 'ok' ? u.data[Number(b.dataset.i)] : null;
+    if (r) openFiche(r.pokemon);
+  }));
+  function drawPodium(u) {
+    const sel = selected();
+    qa('.ob-pod').forEach((b) => {
+      const i = Number(b.dataset.i);
+      const name = b.querySelector('.ob-pod-name'), val = b.querySelector('.ob-pod-val'), spr = b.querySelector('.ob-pod-spr');
+      if (u.status !== 'ok') { name.textContent = '—'; val.textContent = '—'; spr.replaceChildren(); b.setAttribute('aria-pressed', 'false'); if (u.status !== 'loading') { name.classList.remove('dash-skeleton'); val.classList.remove('dash-skeleton'); } return; }
+      const r = u.data[i];
+      name.textContent = r.pokemon; val.textContent = fmtPct.format(r.usage);
+      name.classList.remove('dash-skeleton'); val.classList.remove('dash-skeleton');
+      spr.replaceChildren(sprite(r.pokemon, 44));
+      b.setAttribute('aria-pressed', String(r.pokemon === sel));
+      b.setAttribute('aria-label', `${r.pokemon}, usage ${fmtPct.format(r.usage)}, ouvrir sa fiche`);
+    });
+  }
+
+  // ---------- barres du top 20 ----------
+  const chart = q('.ob-chart');
+  const tip = document.createElement('div'); tip.className = 'ob-tip'; tip.hidden = true; chart.append(tip);
+
+  function drawChart(u, grow) {
+    chart.querySelector('svg')?.remove();
+    chart.querySelector('.ob-fail')?.remove();
+    if (u.status === 'error') { const d = document.createElement('div'); d.className = 'ob-fail'; d.textContent = 'Échec du chargement'; chart.append(d); return; }
+    if (u.status !== 'ok') return;
+    const rows = u.data.slice(0, 20);
+    const W = Math.max(280, chart.clientWidth);
+    const bar = 20, gap = 10, spr = 26;
+    const svg = d3.select(chart).insert('svg', ':first-child').attr('width', '100%');
+    // mesure de la plus longue étiquette
+    const probe = svg.append('text').attr('font-size', 12).style('font-family', 'var(--font-anthropic-sans)');
+    let left = 0;
+    rows.forEach((r) => { probe.text(r.pokemon); left = Math.max(left, probe.node().getComputedTextLength()); });
+    probe.text('00,0 %'); const valW = probe.node().getComputedTextLength();
+    probe.remove();
+    const m = { top: 4, right: valW + 10, bottom: 4, left: left + 10 + spr + 6 };
+    const H = m.top + m.bottom + rows.length * (bar + gap) - gap;
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
+    const x = d3.scaleLinear([0, d3.max(rows, (r) => r.usage)], [0, Math.max(40, W - m.left - m.right)]);
+    const y = (i) => m.top + i * (bar + gap);
+    const sel = selected();
+
+    const g = svg.selectAll('g.r').data(rows).join('g').attr('class', 'r').attr('transform', (d, i) => `translate(0,${y(i)})`);
+    g.each(function (d) {
+      const uri = SPR[d.pokemon];
+      if (uri) d3.select(this).append('image').attr('href', uri).attr('x', m.left - spr - 4).attr('y', (bar - spr) / 2).attr('width', spr).attr('height', spr);
+      else d3.select(this).append('circle').attr('cx', m.left - spr / 2 - 4).attr('cy', bar / 2).attr('r', spr * .3).style('fill', 'var(--cds-chart-grid)');
+    });
+    g.append('text').attr('x', m.left - spr - 10).attr('y', bar / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .attr('font-size', 12).style('font-family', 'var(--font-anthropic-sans)')
+      .style('fill', (d) => d.pokemon === sel ? 'var(--color-fg)' : 'var(--color-fg-muted)')
+      .style('font-weight', (d) => d.pokemon === sel ? 600 : 400)
+      .text((d) => d.pokemon);
+    g.append('rect').attr('class', 'bar').attr('x', m.left).attr('y', 0).attr('height', bar).attr('rx', 4)
+      .attr('width', (d) => (grow ? 0 : Math.max(2, x(d.usage))))
+      .style('fill', (d) => d.pokemon === sel ? dash.colors[0] : 'var(--cds-chart-muted)')
+      .on('click', (e, d) => openFiche(d.pokemon))
+      .on('mousemove', (e, d) => {
+        tip.replaceChildren();
+        const a = document.createElement('div'); a.className = 'k'; a.textContent = d.pokemon;
+        const b = document.createElement('div'); b.textContent = `Usage ${fmtPct.format(d.usage)} · ${fmtInt.format(d.apparitions)} apparitions`;
+        tip.append(a, b); tip.hidden = false;
+        const box = chart.getBoundingClientRect();
+        const tx = Math.min(e.clientX - box.left + 12, box.width - tip.offsetWidth - 4);
+        tip.style.left = `${Math.max(0, tx)}px`; tip.style.top = `${e.clientY - box.top + 12}px`;
+      })
+      .on('mouseleave', () => { tip.hidden = true; });
+    g.append('text').attr('x', (d) => m.left + Math.max(2, x(d.usage)) + 6).attr('y', bar / 2).attr('dy', '0.35em')
+      .attr('font-size', 12).style('font-family', 'var(--font-anthropic-sans)').style('fill', 'var(--color-fg-muted)')
+      .style('font-variant-numeric', 'tabular-nums')
+      .text((d) => fmtPct.format(d.usage));
+    if (grow) {
+      g.select('rect.bar').transition().delay((d, i) => 200 + i * 35).duration(650).ease(d3.easeCubicOut)
+        .attr('width', (d) => Math.max(2, x(d.usage)));
+      g.selectAll('text').style('opacity', 0).transition().delay((d) => 200 + rows.indexOf(d) * 35).duration(450).style('opacity', 1);
+      g.selectAll('image').style('opacity', 0).transition().delay((d) => 150 + rows.indexOf(d) * 35).duration(450).style('opacity', 1);
+    }
+  }
+
+  // ---------- quadrants ----------
+  const quad = q('.ob-quad');
+  const quadLegend = q('.ob-quad-legend');
+  const qtip = document.createElement('div'); qtip.className = 'ob-tip'; qtip.hidden = true; quad.append(qtip);
+  const QUADS = [
+    { k: 'Staple', label: 'Staples', note: 'populaires et plébiscités par l\u2019élite', color: () => dash.colors[0] },
+    { k: 'Pépite', label: 'Pépites', note: 'rares, mais plébiscités par l\u2019élite', color: () => dash.colors[1] },
+    { k: 'Piège', label: 'Pièges', note: 'populaires, mais délaissés par l\u2019élite', color: () => dash.colors[2] },
+    { k: 'Niche', label: 'Niches', note: 'ni l’un ni l’autre', color: () => 'var(--cds-chart-muted)' },
+  ];
+  const qColor = (k) => (QUADS.find((x) => x.k === k) || QUADS[3]).color();
+  const fmtX = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  const fmtIdx = (v) => (v == null ? 'n.d.' : `\u00d7${fmtX.format(v)}`);
+  const fmtTickIdx = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
+  const fmtTick = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 0 });
+
+  function drawLegend(qd) {
+    quadLegend.replaceChildren();
+    if (qd.status !== 'ok') return;
+    QUADS.forEach((d) => {
+      const n = qd.data.filter((r) => r.quadrant === d.k).length;
+      const c = document.createElement('span'); c.className = 'chip'; c.title = d.note;
+      const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = d.color();
+      const b = document.createElement('b'); b.textContent = fmtInt.format(n);
+      const t = document.createElement('span'); t.textContent = `${d.label} (${d.note})`;
+      c.append(dot, b, t); quadLegend.append(c);
+    });
+  }
+
+  function drawQuad(qd, sd, grow) {
+    quad.querySelector('svg')?.remove();
+    quad.querySelector('.ob-fail')?.remove();
+    qtip.hidden = true;
+    drawLegend(qd);
+    if (qd.status === 'error' || sd.status === 'error') { const d = document.createElement('div'); d.className = 'ob-fail'; d.textContent = 'Échec du chargement'; quad.append(d); return; }
+    if (qd.status !== 'ok' || sd.status !== 'ok' || !qd.data.length) return;
+    const rows = qd.data;
+    const { seuil_usage, seuil_elite } = sd.data[0];
+    const W = Math.max(280, quad.clientWidth), H = 440;
+    const m = { top: 14, right: 18, bottom: 40, left: 70 };
+    const xMax = d3.max(rows, (r) => r.usage) * 1.25;
+    const x = d3.scaleLog([0.01, xMax], [m.left, W - m.right]).clamp(true);
+    const [y0, y1] = d3.extent(rows, (r) => r.indice_elite);
+    const y = d3.scaleLog([Math.min(y0, 0.5) / 1.12, Math.max(y1, 2) * 1.12], [H - m.bottom, m.top]);
+    const sel = selected();
+    const font = (s) => s.attr('font-size', 12).style('font-family', 'var(--font-anthropic-sans)');
+
+    const svg = d3.select(quad).insert('svg', ':first-child').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`)
+      .attr('role', 'img').attr('aria-label', `Nuage de ${rows.length} Pokémon : usage en abscisse, indice élite / ladder en ordonnée`);
+
+    // grille et axes
+    const xt = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5].filter((v) => v <= xMax);
+    const yt = [0.25, 0.33, 0.5, 0.67, 1, 1.5, 2, 3, 4].filter((v) => v >= y.domain()[0] && v <= y.domain()[1]);
+    const grid = svg.append('g');
+    grid.selectAll('line.gx').data(xt).join('line').attr('x1', x).attr('x2', x).attr('y1', m.top).attr('y2', H - m.bottom).style('stroke', 'var(--cds-chart-grid)');
+    grid.selectAll('line.gy').data(yt).join('line').attr('x1', m.left).attr('x2', W - m.right).attr('y1', y).attr('y2', y).style('stroke', 'var(--cds-chart-grid)');
+    grid.selectAll('text.tx').data(xt).join('text').call(font).attr('x', x).attr('y', H - m.bottom + 16).attr('text-anchor', 'middle')
+      .style('fill', 'var(--color-fg-muted)').text((v) => fmtTick.format(v));
+    grid.selectAll('text.ty').data(yt).join('text').call(font).attr('x', m.left - 8).attr('y', y).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .style('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums').text((v) => `\u00d7${fmtTickIdx.format(v)}`);
+    grid.append('text').call(font).attr('x', W - m.right).attr('y', H - 4).attr('text-anchor', 'end').style('fill', 'var(--color-fg-muted)').text('Usage, échelle logarithmique →');
+    grid.append('text').call(font).attr('transform', `translate(14,${m.top}) rotate(-90)`).attr('text-anchor', 'end').style('fill', 'var(--color-fg-muted)').text('Plus joué par l\u2019élite →');
+
+    // lignes de référence
+    const ref = svg.append('g').style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 4');
+    ref.append('line').attr('x1', x(seuil_usage)).attr('x2', x(seuil_usage)).attr('y1', m.top).attr('y2', H - m.bottom);
+    ref.append('line').attr('x1', m.left).attr('x2', W - m.right).attr('y1', y(seuil_elite)).attr('y2', y(seuil_elite));
+    svg.append('text').call(font).attr('x', x(seuil_usage) + 4).attr('y', H - m.bottom - 6).style('fill', 'var(--color-fg-muted)').text(`${fmtTick.format(seuil_usage)} d'usage`);
+    svg.append('text').call(font).attr('x', m.left + 4).attr('y', y(seuil_elite) - 6).style('fill', 'var(--color-fg-muted)').text('élite = ladder');
+
+    // étiquettes de coins
+    const corner = [
+      ['Staples', W - m.right - 4, m.top + 12, 'end'], ['Pépites', m.left + 6, m.top + 12, 'start'],
+      ['Pièges', W - m.right - 4, H - m.bottom - 22, 'end'], ['Niches', m.left + 6, H - m.bottom - 22, 'start'],
+    ];
+    svg.append('g').selectAll('text').data(corner).join('text').attr('x', (d) => d[1]).attr('y', (d) => d[2]).attr('text-anchor', (d) => d[3])
+      .attr('font-size', 13).style('font-family', 'var(--font-anthropic-serif)').style('fill', 'var(--color-fg-muted)').style('opacity', 0.75).text((d) => d[0]);
+
+    // points (les Niches d'abord, pour que les autres restent au-dessus)
+    const order = { Niche: 0, 'Pépite': 1, 'Piège': 2, Staple: 3 };
+    const pts = rows.slice().sort((a, b) => (order[a.quadrant] - order[b.quadrant]) || (a.pokemon === sel) - (b.pokemon === sel));
+    const withSprite = (d) => SPR[d.pokemon] && (d.quadrant === 'Staple' || d.quadrant === 'Piège' || d.pokemon === sel);
+    const g = svg.append('g').selectAll('g.p').data(pts, (d) => d.pokemon).join('g').attr('class', 'p')
+      .attr('transform', (d) => `translate(${x(d.usage)},${y(d.indice_elite)})`);
+    g.append('circle').attr('class', 'halo')
+      .attr('r', (d) => withSprite(d) ? 15 : (d.pokemon === sel ? 7 : 5))
+      .style('fill', (d) => qColor(d.quadrant))
+      .style('fill-opacity', (d) => withSprite(d) ? 0.18 : 0.85)
+      .style('stroke', (d) => d.pokemon === sel ? 'var(--color-fg)' : (withSprite(d) ? qColor(d.quadrant) : 'none'))
+      .style('stroke-width', (d) => d.pokemon === sel ? 2 : 1);
+    g.filter(withSprite).append('image').attr('href', (d) => SPR[d.pokemon]).attr('x', -15).attr('y', -15).attr('width', 30).attr('height', 30)
+      .style('pointer-events', 'none');
+    g.append('circle').attr('class', 'pt').attr('r', (d) => withSprite(d) ? 15 : 9).style('fill', 'transparent')
+      .on('click', (e, d) => openFiche(d.pokemon))
+      .on('mousemove', (e, d) => {
+        qtip.replaceChildren();
+        const a = document.createElement('div'); a.className = 'k'; a.textContent = `${d.pokemon} · ${(QUADS.find((z) => z.k === d.quadrant) || {}).label || d.quadrant}`;
+        const b = document.createElement('div'); b.textContent = `Usage ${fmtPct.format(d.usage)} · élite / ladder ${fmtIdx(d.indice_elite)} · rang ${fmtInt.format(d.rang)}`;
+        qtip.append(a, b); qtip.hidden = false;
+        const box = quad.getBoundingClientRect();
+        const tx = Math.min(e.clientX - box.left + 12, box.width - qtip.offsetWidth - 4);
+        qtip.style.left = `${Math.max(0, tx)}px`; qtip.style.top = `${e.clientY - box.top + 12}px`;
+      })
+      .on('mouseleave', () => { qtip.hidden = true; });
+
+    if (grow) {
+      g.style('opacity', 0).transition().delay((d, i) => 250 + i * 12).duration(500).ease(d3.easeCubicOut).style('opacity', 1);
+    }
+  }
+
+  // ---------- fiche ----------
+  const selectEl = q('#ob-select');
+  selectEl.addEventListener('change', () => pick(selectEl.value));
+
+  function fillList(el, rows, labelOf, valueOf, color, withSprite) {
+    el.replaceChildren();
+    if (!rows.length) { const p = document.createElement('div'); p.className = 'ob-empty'; p.textContent = 'Aucune donnée'; el.append(p); return; }
+    rows.forEach((r) => {
+      const row = document.createElement('div'); row.className = 'ob-row';
+      const l = document.createElement('span'); l.className = 'lab'; l.title = labelOf(r);
+      const txt = document.createElement('span'); txt.textContent = labelOf(r);
+      if (withSprite) l.append(sprite(labelOf(r), 22));
+      l.append(txt);
+      const v = document.createElement('span'); v.className = 'val'; v.textContent = fmtPct.format(valueOf(r));
+      const t = document.createElement('div'); t.className = 'trk';
+      const f = document.createElement('div'); f.className = 'fil'; f.style.background = color;
+      const target = `${Math.min(100, 100 * valueOf(r))}%`;
+      if (reduce()) f.style.width = target; else { f.style.width = '0%'; requestAnimationFrame(() => requestAnimationFrame(() => { f.style.width = target; })); }
+      t.append(f); row.append(l, v, t); el.append(row);
+    });
+  }
+
+  function drawFiche(u, b, t) {
+    const sel = selected();
+    if (u.status === 'ok') {
+      if (selectEl.options.length !== u.data.length) {
+        selectEl.replaceChildren(...u.data.map((r) => new Option(r.pokemon, r.pokemon)));
+      }
+      selectEl.value = sel;
+      const r = u.data.find((x) => x.pokemon === sel) || u.data[0];
+      const w = `pokemon=${enc(r.pokemon)}`;
+      const wrap = q('.ob-sel-sprwrap');
+      if (wrap.dataset.for !== r.pokemon) {
+        const im = sprite(r.pokemon, 88); im.classList.add('ob-sel-sprite');
+        wrap.replaceChildren(im); wrap.dataset.for = r.pokemon;
+        if (wrap.dataset.drawn) { void im.offsetWidth; im.classList.add('ob-morph'); }
+        wrap.dataset.drawn = '1';
+      }
+      const uf = USAGE_FIELD[selPalier()];
+      const uEl = q('.ob-sel-usage'); uEl.dataset.field = uf;
+      q('.ob-usage-lab').textContent = selPalier() === 1500 ? 'Usage' : `Usage (${selPalier() === 1760 ? 'élite' : PALIER_LABEL[selPalier()]})`;
+      [['.ob-sel-name', 'pokemon', (v) => v], ['.ob-sel-usage', uf, (v) => fmtPct.format(v)], ['.ob-sel-rang', 'rang', (v) => fmtInt.format(v)], ['.ob-sel-ie', 'indice_elite', fmtIdx], ['.ob-sel-vc', 'viability_ceiling', (v) => (v == null ? 'n.d.' : fmtInt.format(v))]]
+        .forEach(([s, f, fmt]) => { const el = q(s); el.setAttribute('data-where', w); el.textContent = fmt(r[f]); });
+    }
+    const lists = [['.ob-items', 'Objet', 5], ['.ob-moves', 'Capacité', 6], ['.ob-abil', 'Talent', 3]];
+    lists.forEach(([s, cat, n]) => {
+      const el = q(s);
+      if (b.status === 'error') return failLine(el);
+      if (b.status !== 'ok') { el.replaceChildren(); return; }
+      const pal = selPalier();
+      const rows = b.data.filter((r) => r.pokemon === sel && Number(r.palier) === pal && r.categorie === cat).map((r) => ({ ...r, adoption: Number(r.adoption) }))
+        .sort((a, c) => c.adoption - a.adoption).slice(0, n);
+      fillList(el, rows, (r) => r.valeur, (r) => r.adoption, dash.colors[0]);
+    });
+    const tEl = q('.ob-team');
+    if (t.status === 'error') failLine(tEl);
+    else if (t.status !== 'ok') tEl.replaceChildren();
+    else {
+      const rows = t.data.filter((r) => r.pokemon === sel && Number(r.palier) === selPalier()).map((r) => ({ ...r, affinite: Number(r.affinite) }))
+        .sort((a, c) => c.affinite - a.affinite).slice(0, 6);
+      fillList(tEl, rows, (r) => r.partenaire, (r) => r.affinite, dash.colors[1], true);
+    }
+  }
+
+  // copies locales : chaque bloc <script> peut être exécuté dans sa propre portée
+  const STAT_KEYS = ['pv', 'atq', 'def', 'atqspe', 'defspe', 'vit'];
+  const parseSpread = (valeur) => {
+    const [nature, evs] = String(valeur).split(':');
+    const pts = (evs || '').split('/').map(Number);
+    return pts.length === 6 && pts.every((v) => Number.isFinite(v)) ? { nature: nature.trim(), pts } : null;
+  };
+
+  // ---------- palier ----------
+  const segBtns = qa('.ob-seg button');
+  qa('.ob-seg').forEach((grp) => {
+    const btns = [...grp.querySelectorAll('button')];
+    btns.forEach((btn) => btn.addEventListener('click', () => dash.setParams({ palier: Number(btn.dataset.palier) })));
+    grp.addEventListener('keydown', (e) => {
+      const i = btns.findIndex((b) => Number(b.dataset.palier) === selPalier());
+      const n = e.key === 'ArrowRight' ? (i + 1) % btns.length : e.key === 'ArrowLeft' ? (i - 1 + btns.length) % btns.length : null;
+      if (n === null) return;
+      e.preventDefault(); dash.setParams({ palier: Number(btns[n].dataset.palier) }); btns[n].focus();
+    });
+  });
+  function drawSeg() {
+    segBtns.forEach((b) => { const on = Number(b.dataset.palier) === selPalier(); b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; });
+  }
+
+  // ---------- répartition des statistiques ----------
+  const STAT_LAB = { pv: 'PV', atq: 'Attaque', def: 'Défense', atqspe: 'Atq. Spé.', defspe: 'Déf. Spé.', vit: 'Vitesse' };
+  const fmtPts = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  function drawStats(b, nat, pm) {
+    const sel = selected(), pal = selPalier();
+    const natEl = q('.ob-nat'), ptsEl = q('.ob-pts'), cov = q('.ob-cov'), leg = q('.ob-pts-legend');
+    if (nat.status === 'error') failLine(natEl); else if (nat.status !== 'ok') natEl.replaceChildren();
+    else {
+      const rows = nat.data.filter((r) => r.pokemon === sel && r.palier === pal).sort((a, c) => c.part - a.part).slice(0, 4);
+      fillList(natEl, rows, (r) => r.nature, (r) => r.part, dash.colors[0]);
+    }
+    ptsEl.replaceChildren(); leg.replaceChildren(); cov.textContent = '';
+    if (pm.status === 'error') failLine(ptsEl);
+    else if (pm.status === 'ok') {
+      const cur = pm.data.find((r) => r.pokemon === sel && r.palier === pal);
+      const ref = pal !== 0 ? pm.data.find((r) => r.pokemon === sel && r.palier === 0) : null;
+      if (!cur) { const d = document.createElement('div'); d.className = 'ob-empty'; d.textContent = 'Aucun spread détaillé pour ce Pokémon à ce palier.'; ptsEl.append(d); }
+      else {
+        cov.textContent = `Les spreads détaillés par Smogon couvrent ${fmtPct.format(cur.couverture)} des équipes qui jouent ${sel} (${PALIER_LABEL[pal]}). Les autres répartitions sont trop dispersées pour être listées : ces chiffres décrivent les choix les plus courants, pas l'ensemble des joueurs.`;
+        const series = [[cur, dash.colors[0], PALIER_LABEL[pal]]];
+        if (ref) series.push([ref, 'var(--cds-chart-muted)', 'tous les joueurs']);
+        series.forEach(([, col, lab]) => { const s = document.createElement('span'); const d = document.createElement('span'); d.className = 'dot'; d.style.background = col; s.append(d, lab.charAt(0).toUpperCase() + lab.slice(1)); leg.append(s); });
+        STAT_KEYS.forEach((st) => {
+          const row = document.createElement('div'); row.className = 'ob-pt';
+          const l = document.createElement('span'); l.className = 'lab'; l.textContent = STAT_LAB[st]; row.append(l);
+          series.forEach(([rec, col]) => {
+            const t = document.createElement('div'); t.className = 'trk';
+            const f = document.createElement('div'); f.className = 'fil'; f.style.background = col;
+            const target = `${Math.min(100, 100 * rec[st] / 32)}%`;
+            if (reduce()) f.style.width = target; else { f.style.width = '0%'; requestAnimationFrame(() => requestAnimationFrame(() => { f.style.width = target; })); }
+            t.append(f);
+            const v = document.createElement('span'); v.className = 'val'; v.textContent = fmtPts.format(rec[st]);
+            row.append(t, v);
+          });
+          ptsEl.append(row);
+        });
+      }
+    }
+    const body = q('.ob-sp tbody'), spEmpty = q('.ob-sp-empty');
+    body.replaceChildren(); spEmpty.hidden = true; q('.ob-sp').hidden = false;
+    if (b.status !== 'ok') return;
+    const all = b.data.filter((r) => r.pokemon === sel && Number(r.palier) === pal && r.categorie === 'Spread')
+      .map((r) => ({ ...r, adoption: Number(r.adoption), sp: parseSpread(r.valeur) })).filter((r) => r.sp)
+      .sort((a, c) => c.adoption - a.adoption);
+    if (!all.length) { spEmpty.hidden = false; q('.ob-sp').hidden = true; return; }
+    all.forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = `${enc(r.pokemon)},${r.palier},${enc(r.valeur)}`;
+      const n = document.createElement('td'); n.className = 'nat'; n.textContent = r.sp.nature; n.title = r.valeur; tr.append(n);
+      r.sp.pts.forEach((v) => {
+        const td = document.createElement('td'); td.className = 'num pt'; td.textContent = String(v);
+        if (v > 0) td.style.background = `color-mix(in srgb, ${dash.colors[0]} ${Math.round(8 + 40 * v / 32)}%, transparent)`;
+        else td.style.color = 'var(--color-fg-muted)';
+        tr.append(td);
+      });
+      const pc = document.createElement('td'); pc.className = 'num'; pc.textContent = fmtPct.format(r.adoption); tr.append(pc);
+      body.append(tr);
+    });
+    const listed = all.reduce((s2, r) => s2 + r.adoption, 0);
+    if (listed < 0.999) {
+      const tr = document.createElement('tr'); tr.className = 'other';
+      const td = document.createElement('td'); td.colSpan = 7; td.textContent = 'Autres répartitions, regroupées par Smogon';
+      const pc = document.createElement('td'); pc.className = 'num'; pc.textContent = fmtPct.format(1 - listed);
+      tr.append(td, pc); body.append(tr);
+    }
+  }
+
+  // ---------- menaces ----------
+  function drawCounters(c) {
+    const body = q('.ob-ctr tbody');
+    const empty = q('.ob-ctr-empty');
+    body.replaceChildren();
+    if (c.status !== 'ok') { empty.hidden = true; return; }
+    const sel = selected();
+    const rows = c.data.filter((r) => r.pokemon === sel && Number(r.palier) === selPalier()).sort((a, b) => Number(b.score_matchup) - Number(a.score_matchup));
+    empty.hidden = rows.length > 0;
+    q('.ob-ctr').hidden = rows.length === 0;
+    rows.forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = `${enc(r.pokemon)},${enc(r.adversaire)}`;
+      const cells = [r.adversaire, fmtScore.format(Number(r.score_matchup)),
+        r.taux_ko == null ? '' : fmtPct.format(Number(r.taux_ko)),
+        r.taux_switch == null ? '' : fmtPct.format(Number(r.taux_switch))];
+      cells.forEach((v, i) => {
+        const td = document.createElement('td');
+        if (i) { td.className = 'num'; td.textContent = v; }
+        else { td.className = 'ob-name'; const t = document.createElement('span'); t.textContent = v; td.append(sprite(v, 24), t); }
+        tr.append(td);
+      });
+      tr.addEventListener('click', () => pick(r.adversaire));
+      body.append(tr);
+    });
+  }
+
+  // ---------- classement ----------
+  const search = q('#ob-search');
+  search.addEventListener('input', () => { state.search = search.value.trim().toLowerCase(); drawTable(dash.data('usage')); });
+  qa('.ob-rank th button').forEach((btn) => btn.addEventListener('click', () => {
+    const k = btn.dataset.sort;
+    state.dir = state.sort === k ? -state.dir : (k === 'pokemon' || k === 'rang' ? 1 : -1);
+    state.sort = k;
+    drawTable(dash.data('usage'));
+  }));
+
+  function drawTable(u) {
+    const body = q('.ob-rank tbody');
+    body.replaceChildren();
+    qa('.ob-rank th').forEach((th) => {
+      const k = th.dataset.field;
+      th.setAttribute('aria-sort', state.sort === k ? (state.dir === 1 ? 'ascending' : 'descending') : 'none');
+    });
+    if (u.status !== 'ok') return;
+    const max = d3.max(u.data, (r) => r.usage);
+    let rows = u.data.filter((r) => !state.search || r.pokemon.toLowerCase().includes(state.search));
+    rows = rows.slice().sort((a, b) => {
+      const k = state.sort;
+      return (k === 'pokemon' ? a.pokemon.localeCompare(b.pokemon, 'fr') : (a[k] ?? -1) - (b[k] ?? -1)) * state.dir;
+    });
+    rows.forEach((r) => {
+      const tr = document.createElement('tr');
+      const tdR = document.createElement('td'); tdR.className = 'num'; tdR.textContent = fmtInt.format(r.rang);
+      const tdP = document.createElement('td'); tdP.className = 'ob-name';
+      const tP = document.createElement('span'); tP.textContent = r.pokemon; tdP.append(sprite(r.pokemon, 24), tP);
+      const tdU = document.createElement('td');
+      const span = document.createElement('span'); span.textContent = fmtPct.format(r.usage);
+      const barEl = document.createElement('span'); barEl.className = 'ob-incell';
+      barEl.style.width = `${Math.max(2, 80 * r.usage / max)}px`; barEl.style.background = dash.colors[0];
+      tdU.append(span, barEl);
+      const tdE = document.createElement('td'); tdE.className = 'num'; tdE.textContent = fmtIdx(r.indice_elite);
+      const tdA = document.createElement('td'); tdA.className = 'num hide-sm'; tdA.textContent = fmtInt.format(r.apparitions);
+      const tdV = document.createElement('td'); tdV.className = 'num hide-sm'; tdV.textContent = r.viability_ceiling == null ? '' : fmtInt.format(r.viability_ceiling);
+      tr.append(tdR, tdP, tdU, tdE, tdA, tdV);
+      tr.addEventListener('click', () => openFiche(r.pokemon));
+      body.append(tr);
+    });
+  }
+
+  // ---------- période, écarts des indicateurs et faits marquants (marques d'une ligne) ----------
+  const fmtPctSigne = new Intl.NumberFormat('fr-FR', { style: 'percent', signDisplay: 'exceptZero', maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  const fmtIntSigne = new Intl.NumberFormat('fr-FR', { signDisplay: 'always' });
+  const fmtDecSigne = new Intl.NumberFormat('fr-FR', { signDisplay: 'exceptZero', maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  const fmtEcart = (v) => `${fmtDecSigne.format(v)} pt${Math.abs(v) >= 1.95 ? 's' : ''}`;
+  const FMT_CHAMP = {
+    equipes_variation: (v) => fmtPctSigne.format(v),
+    nb_pokemon_ecart: (v) => fmtIntSigne.format(v),
+    nb_sup5_ecart: (v) => fmtIntSigne.format(v),
+    part_top10_ecart_pts: fmtEcart,
+    hausse_pts: fmtEcart,
+    baisse_pts: fmtEcart,
+  };
+  const fmtChamp = (f, v) => (v == null || (typeof v === 'number' && !Number.isFinite(v)) ? '—' : (FMT_CHAMP[f] ? FMT_CHAMP[f](v) : String(v)));
+  const ligne0 = (id) => { const d = dash.data(id); return d.status === 'ok' && Array.isArray(d.data) && d.data.length ? d.data[0] : null; };
+  function fillRow0(id) {
+    const d = dash.data(id), row = ligne0(id);
+    qa(`[data-source="${id}"][data-row="0"]`).forEach((el) => {
+      if (d.status === 'loading') return;
+      el.classList.remove('dash-skeleton');
+      el.textContent = fmtChamp(el.dataset.field, row ? row[el.dataset.field] : null);
+    });
+    return row;
+  }
+  function drawDeltas() {
+    const row = fillRow0('variation_synthese');
+    qa('.ob-kpi-delta').forEach((el) => { el.hidden = !row; });
+  }
+
+  // ---------- évolution ----------
+  const PAL_COURT = { 0: 'Tous', 1500: '1500', 1630: '1630', 1760: 'Élite' };
+  const QLAB = { Staple: 'Staples', 'Pépite': 'Pépites', 'Piège': 'Pièges', Niche: 'Niches' };
+  const moisLong = (m) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const moisCourt = (m) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const majuscule = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+  const police = (s) => s.attr('font-size', 12).style('font-family', 'var(--font-anthropic-sans)');
+  const evoBoxes = { movers: q('.ob-movers'), dumb: q('.ob-dumb'), qbars: q('.ob-qbars'), traj: q('.ob-traj') };
+  const evoTips = {};
+  Object.entries(evoBoxes).forEach(([k, box]) => {
+    if (!box) return;
+    const t = document.createElement('div'); t.className = 'ob-tip'; t.hidden = true; box.append(t); evoTips[k] = t;
+  });
+  const hideTip = (k) => { if (evoTips[k]) evoTips[k].hidden = true; };
+  const showTip = (k, e, titre, lignes) => {
+    const t = evoTips[k], box = evoBoxes[k];
+    if (!t) return;
+    t.replaceChildren();
+    const a = document.createElement('div'); a.className = 'k'; a.textContent = titre; t.append(a);
+    lignes.forEach((s) => { const d = document.createElement('div'); d.textContent = s; t.append(d); });
+    t.hidden = false;
+    const r = box.getBoundingClientRect();
+    t.style.left = `${Math.max(0, Math.min(e.clientX - r.left + 12, r.width - t.offsetWidth - 4))}px`;
+    t.style.top = `${e.clientY - r.top + 12}px`;
+  };
+  const viderBoite = (box) => { box.querySelector('svg')?.remove(); box.querySelector('.ob-fail')?.remove(); };
+  const echecBoite = (box) => { const d = document.createElement('div'); d.className = 'ob-fail'; d.textContent = 'Échec du chargement'; box.append(d); };
+  const mesurer = (svg, textes) => {
+    const p = svg.append('text').call(police);
+    let w = 0;
+    textes.forEach((s) => { p.text(s); w = Math.max(w, p.node().getComputedTextLength()); });
+    p.remove();
+    return w;
+  };
+  const nbTicks = (x) => Math.max(2, Math.floor((x.range()[1] - x.range()[0]) / 70));
+
+  // barres divergentes : les plus fortes hausses en haut, les plus fortes baisses en bas
+  function drawMovers(v, per, grow) {
+    const box = evoBoxes.movers; if (!box) return;
+    viderBoite(box); hideTip('movers');
+    if (v.status === 'error') return echecBoite(box);
+    if (v.status !== 'ok' || !v.data.length) return;
+    const pal = selPalier(), sel = selected();
+    const elig = v.data.filter((r) => r.palier === pal && Math.max(r.usage, r.usage_avant) >= 0.01);
+    const up = elig.filter((r) => r.ecart_pts > 0).sort((a, b) => b.ecart_pts - a.ecart_pts).slice(0, 8);
+    const down = elig.filter((r) => r.ecart_pts < 0).sort((a, b) => b.ecart_pts - a.ecart_pts).slice(-8);
+    const rows = [...up, ...down];
+    if (!rows.length) return;
+    const W = Math.max(280, box.clientWidth);
+    const bar = 18, gap = 9, spr = 24, sep = up.length && down.length ? 10 : 0;
+    const svg = d3.select(box).insert('svg', ':first-child').attr('width', '100%');
+    const nameW = mesurer(svg, rows.map((r) => r.pokemon));
+    const valW = mesurer(svg, rows.map((r) => fmtEcart(r.ecart_pts)));
+    const lab = nameW + 4 + spr + 8;
+    const m = { top: 2, right: valW + 8, bottom: 2, left: lab + (down.length ? valW + 8 : 0) };
+    const y = (i) => m.top + i * (bar + gap) + (i >= up.length ? sep : 0);
+    const H = y(rows.length - 1) + bar + m.bottom;
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H).attr('role', 'img')
+      .attr('aria-label', `Plus fortes hausses et baisses d'usage entre ${per?.mois_precedent_nom} et ${per?.mois_nom}, ${PALIER_LABEL[pal]}`);
+    const lo = Math.min(0, d3.min(rows, (r) => r.ecart_pts)), hi = Math.max(0, d3.max(rows, (r) => r.ecart_pts));
+    const x = d3.scaleLinear([lo, hi], [m.left, Math.max(m.left + 60, W - m.right)]);
+    const x0 = x(0), fin = (d) => x(d.ecart_pts);
+    svg.append('line').attr('x1', x0).attr('x2', x0).attr('y1', 0).attr('y2', H).style('stroke', 'var(--cds-chart-axis)');
+    const g = svg.selectAll('g.r').data(rows, (d) => d.pokemon).join('g').attr('class', 'r').attr('transform', (d, i) => `translate(0,${y(i)})`);
+    g.append('text').call(police).attr('x', nameW).attr('y', bar / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .style('fill', (d) => (d.pokemon === sel ? 'var(--color-fg)' : 'var(--color-fg-muted)'))
+      .style('font-weight', (d) => (d.pokemon === sel ? 600 : 400))
+      .text((d) => d.pokemon);
+    g.each(function (d) {
+      const uri = SPR[d.pokemon];
+      if (uri) d3.select(this).append('image').attr('href', uri).attr('x', nameW + 4).attr('y', (bar - spr) / 2).attr('width', spr).attr('height', spr);
+    });
+    const rects = g.append('rect').attr('class', 'bar').attr('y', 0).attr('height', bar).attr('rx', 3).style('fill', dash.colors[0])
+      .attr('x', (d) => (grow ? x0 : Math.min(x0, fin(d))))
+      .attr('width', (d) => (grow ? 0 : Math.max(2, Math.abs(fin(d) - x0))));
+    g.append('text').call(police).attr('class', 'val').attr('y', bar / 2).attr('dy', '0.35em')
+      .attr('x', (d) => (d.ecart_pts >= 0 ? fin(d) + 6 : fin(d) - 6))
+      .attr('text-anchor', (d) => (d.ecart_pts >= 0 ? 'start' : 'end'))
+      .style('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums')
+      .text((d) => fmtEcart(d.ecart_pts));
+    g.append('rect').attr('class', 'hit').attr('x', 0).attr('y', -gap / 2).attr('width', W).attr('height', bar + gap).style('fill', 'transparent')
+      .on('click', (e, d) => openFiche(d.pokemon))
+      .on('mousemove', (e, d) => showTip('movers', e, d.pokemon, [
+        `${majuscule(per?.mois_precedent_nom)} : ${fmtPct.format(d.usage_avant)}${d.rang_avant ? `, rang ${fmtInt.format(d.rang_avant)}` : ''}`,
+        `${majuscule(per?.mois_nom)} : ${fmtPct.format(d.usage)}${d.rang ? `, rang ${fmtInt.format(d.rang)}` : ''}`,
+        `Écart : ${fmtEcart(d.ecart_pts)}`,
+      ]))
+      .on('mouseleave', () => hideTip('movers'));
+    if (grow) {
+      rects.transition().delay((d, i) => 150 + i * 30).duration(600).ease(d3.easeCubicOut)
+        .attr('x', (d) => Math.min(x0, fin(d))).attr('width', (d) => Math.max(2, Math.abs(fin(d) - x0)));
+      g.selectAll('text.val').style('opacity', 0).transition().delay((d) => 300 + rows.indexOf(d) * 30).duration(400).style('opacity', 1);
+    }
+  }
+
+  // haltères : point creux = mois précédent, point plein = dernier mois
+  function drawDumbLegend(per) {
+    const el = q('.ob-dumb-legend'); if (!el) return;
+    el.replaceChildren();
+    if (!per || !per.mois_precedent_nom) return;
+    [[per.mois_nom, true], [per.mois_precedent_nom, false]].forEach(([lab, plein]) => {
+      const s = document.createElement('span');
+      const sw = document.createElement('span'); sw.className = 'sw';
+      if (plein) sw.style.background = dash.colors[0]; else sw.style.border = `2px solid ${dash.colors[0]}`;
+      s.append(sw, majuscule(lab));
+      el.append(s);
+    });
+  }
+  function drawDumbbell(v, per, grow) {
+    const box = evoBoxes.dumb; if (!box) return;
+    viderBoite(box); hideTip('dumb');
+    if (v.status === 'error') return echecBoite(box);
+    if (v.status !== 'ok' || !v.data.length) return;
+    const pal = selPalier(), sel = selected();
+    const rows = v.data.filter((r) => r.palier === pal && r.rang != null && r.rang <= 15).sort((a, b) => a.rang - b.rang);
+    if (!rows.length) return;
+    const W = Math.max(280, box.clientWidth);
+    const row = 20, gap = 8, spr = 24;
+    const rangTxt = (d) => (d.rang_avant == null ? 'nouveau' : d.rang_avant === d.rang ? '=' : d.rang_avant > d.rang ? `▲ ${d.rang_avant - d.rang}` : `▼ ${d.rang - d.rang_avant}`);
+    const svg = d3.select(box).insert('svg', ':first-child').attr('width', '100%');
+    const nameW = mesurer(svg, rows.map((r) => r.pokemon));
+    const valW = mesurer(svg, rows.map((r) => fmtPct.format(r.usage)));
+    const rkW = mesurer(svg, rows.map(rangTxt).concat(['▲ 88']));
+    const m = { top: 2, right: 10 + valW + 12 + rkW + 2, bottom: 22, left: nameW + 4 + spr + 10 };
+    const H = m.top + rows.length * (row + gap) - gap + m.bottom;
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H).attr('role', 'img')
+      .attr('aria-label', `Top 15, ${PALIER_LABEL[pal]} : usage de ${per?.mois_nom} comparé à ${per?.mois_precedent_nom}`);
+    const xmax = d3.max(rows, (r) => Math.max(r.usage, r.usage_avant)) || 0.01;
+    const x = d3.scaleLinear([0, xmax], [m.left, Math.max(m.left + 60, W - m.right)]).nice();
+    const right = x.range()[1];
+    const y = (i) => m.top + i * (row + gap);
+    const xt = x.ticks(nbTicks(x));
+    svg.append('g').selectAll('line').data(xt).join('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', H - m.bottom + 4).style('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('text').data(xt).join('text').call(police).attr('x', x).attr('y', H - 4).attr('text-anchor', 'middle')
+      .style('fill', 'var(--color-fg-muted)').text((t) => fmtTick.format(t));
+    const g = svg.selectAll('g.r').data(rows, (d) => d.pokemon).join('g').attr('class', 'r').attr('transform', (d, i) => `translate(0,${y(i)})`);
+    g.append('text').call(police).attr('x', nameW).attr('y', row / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .style('fill', (d) => (d.pokemon === sel ? 'var(--color-fg)' : 'var(--color-fg-muted)'))
+      .style('font-weight', (d) => (d.pokemon === sel ? 600 : 400))
+      .text((d) => d.pokemon);
+    g.each(function (d) {
+      const uri = SPR[d.pokemon];
+      if (uri) d3.select(this).append('image').attr('href', uri).attr('x', nameW + 4).attr('y', (row - spr) / 2).attr('width', spr).attr('height', spr);
+    });
+    const lien = g.append('line').attr('y1', row / 2).attr('y2', row / 2).attr('x1', (d) => x(d.usage_avant))
+      .attr('x2', (d) => x(grow ? d.usage_avant : d.usage))
+      .style('stroke', `color-mix(in srgb, ${dash.colors[0]} 45%, transparent)`).style('stroke-width', 2).style('stroke-linecap', 'round');
+    g.append('circle').attr('cx', (d) => x(d.usage_avant)).attr('cy', row / 2).attr('r', 4.5)
+      .style('fill', 'var(--color-panel)').style('stroke', dash.colors[0]).style('stroke-width', 2);
+    const plein = g.append('circle').attr('cx', (d) => x(grow ? d.usage_avant : d.usage)).attr('cy', row / 2).attr('r', 5)
+      .style('fill', dash.colors[0]);
+    g.append('text').call(police).attr('x', right + 10).attr('y', row / 2).attr('dy', '0.35em')
+      .style('fill', 'var(--color-fg)').style('font-variant-numeric', 'tabular-nums').text((d) => fmtPct.format(d.usage));
+    g.append('text').call(police).attr('x', W - 2).attr('y', row / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .style('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums').text(rangTxt);
+    g.append('rect').attr('class', 'hit').attr('x', 0).attr('y', -gap / 2).attr('width', W).attr('height', row + gap).style('fill', 'transparent')
+      .on('click', (e, d) => openFiche(d.pokemon))
+      .on('mousemove', (e, d) => showTip('dumb', e, d.pokemon, [
+        `${majuscule(per?.mois_precedent_nom)} : ${fmtPct.format(d.usage_avant)}${d.rang_avant ? `, rang ${fmtInt.format(d.rang_avant)}` : ''}`,
+        `${majuscule(per?.mois_nom)} : ${fmtPct.format(d.usage)}, rang ${fmtInt.format(d.rang)}`,
+        `Écart : ${fmtEcart(d.ecart_pts)}`,
+      ]))
+      .on('mouseleave', () => hideTip('dumb'));
+    if (grow) {
+      lien.transition().delay((d, i) => 200 + i * 35).duration(650).ease(d3.easeCubicOut).attr('x2', (d) => x(d.usage));
+      plein.transition().delay((d, i) => 200 + i * 35).duration(650).ease(d3.easeCubicOut).attr('cx', (d) => x(d.usage));
+    }
+  }
+
+  // bilan des quadrants du mois précédent
+  function drawQBilan(qb, per) {
+    const box = evoBoxes.qbars; if (!box) return;
+    viderBoite(box); hideTip('qbars');
+    if (qb.status === 'error') return echecBoite(box);
+    if (qb.status !== 'ok') return;
+    const rows = qb.data.filter((r) => r.nb > 0 && r.ecart_median_pts != null);
+    if (!rows.length) return;
+    const W = Math.max(280, box.clientWidth);
+    const bar = 20, gap = 12;
+    const labTxt = (d) => `${QLAB[d.quadrant] || d.quadrant} (${fmtInt.format(d.nb)})`;
+    const svg = d3.select(box).insert('svg', ':first-child').attr('width', '100%');
+    const labW = mesurer(svg, rows.map(labTxt));
+    const valW = mesurer(svg, rows.map((d) => fmtEcart(d.ecart_median_pts)));
+    const neg = rows.some((d) => d.ecart_median_pts < 0);
+    const m = { top: 2, right: valW + 8, bottom: 2, left: 14 + labW + 12 + (neg ? valW + 8 : 0) };
+    const H = m.top + rows.length * (bar + gap) - gap + m.bottom;
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H).attr('role', 'img')
+      .attr('aria-label', `Écart médian d'usage selon le quadrant de ${per?.mois_precedent_nom}`);
+    const lo = Math.min(0, d3.min(rows, (r) => r.ecart_median_pts)), hi = Math.max(0, d3.max(rows, (r) => r.ecart_median_pts));
+    const x = d3.scaleLinear([lo, hi], [m.left, Math.max(m.left + 60, W - m.right)]);
+    const x0 = x(0), fin = (d) => x(d.ecart_median_pts);
+    svg.append('line').attr('x1', x0).attr('x2', x0).attr('y1', 0).attr('y2', H).style('stroke', 'var(--cds-chart-axis)');
+    const g = svg.selectAll('g.r').data(rows, (d) => d.quadrant).join('g').attr('class', 'r').attr('transform', (d, i) => `translate(0,${m.top + i * (bar + gap)})`);
+    g.append('circle').attr('cx', 5).attr('cy', bar / 2).attr('r', 4.5).style('fill', (d) => qColor(d.quadrant));
+    g.append('text').call(police).attr('x', 14).attr('y', bar / 2).attr('dy', '0.35em').style('fill', 'var(--color-fg)').text(labTxt);
+    g.append('rect').attr('y', 0).attr('height', bar).attr('rx', 3).style('fill', (d) => qColor(d.quadrant))
+      .attr('x', (d) => Math.min(x0, fin(d))).attr('width', (d) => Math.max(2, Math.abs(fin(d) - x0)));
+    g.append('text').call(police).attr('y', bar / 2).attr('dy', '0.35em')
+      .attr('x', (d) => (d.ecart_median_pts >= 0 ? fin(d) + 6 : fin(d) - 6))
+      .attr('text-anchor', (d) => (d.ecart_median_pts >= 0 ? 'start' : 'end'))
+      .style('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums')
+      .text((d) => fmtEcart(d.ecart_median_pts));
+    g.append('rect').attr('x', 0).attr('y', -gap / 2).attr('width', W).attr('height', bar + gap).style('fill', 'transparent')
+      .on('mousemove', (e, d) => showTip('qbars', e, `${QLAB[d.quadrant]} de ${per?.mois_precedent_nom}`, [
+        `${fmtInt.format(d.nb)} Pokémon`,
+        `Écart médian en ${per?.mois_nom} : ${fmtEcart(d.ecart_median_pts)}`,
+        `En hausse : ${fmtTick.format(d.part_hausse)}`,
+      ]))
+      .on('mouseleave', () => hideTip('qbars'));
+  }
+
+  function drawQPhrase(qb) {
+    const p = q('.ob-qs-phrase'); if (!p) return;
+    const get = (k) => (qb.status === 'ok' ? qb.data.find((r) => r.quadrant === k) : null);
+    const pep = get('Pépite'), nic = get('Niche'), sta = get('Staple'), pie = get('Piège');
+    const ok = [pep, nic, sta, pie].every((r) => r && r.nb > 0 && r.ecart_median_pts != null);
+    p.hidden = !ok;
+    if (!ok) return;
+    p.querySelectorAll('[data-source="quadrants_bilan"]').forEach((el) => {
+      const r = get(new URLSearchParams(el.dataset.where).get('quadrant'));
+      el.textContent = r ? fmtEcart(r.ecart_median_pts) : '—';
+    });
+    const d1 = pep.ecart_median_pts - nic.ecart_median_pts, d2 = sta.ecart_median_pts - pie.ecart_median_pts;
+    const verdict = d1 > 0 && d2 > 0 ? 'plus favorablement' : d1 < 0 && d2 < 0 ? 'moins favorablement' : 'de façon contrastée';
+    p.querySelectorAll('.ob-qs-verdict').forEach((el) => { el.textContent = verdict; });
+  }
+
+  function drawQChanges(qs, per) {
+    const body = q('.ob-qch tbody'), empty = q('.ob-qch-empty'), table = q('.ob-qch');
+    if (!body) return;
+    body.replaceChildren();
+    if (per && per.mois_precedent_nom) {
+      qa('.ob-qch-avant').forEach((th) => { th.textContent = majuscule(per.mois_precedent_nom); });
+      qa('.ob-qch-apres').forEach((th) => { th.textContent = majuscule(per.mois_nom); });
+    }
+    if (qs.status !== 'ok') { if (empty) empty.hidden = true; return; }
+    const rows = qs.data.filter((r) => r.quadrant_avant !== r.quadrant).sort((a, b) => Math.abs(b.ecart_pts) - Math.abs(a.ecart_pts));
+    if (empty) empty.hidden = rows.length > 0;
+    table.hidden = rows.length === 0;
+    const cellQ = (k) => {
+      const td = document.createElement('td');
+      const s = document.createElement('span'); s.className = 'ob-q';
+      const dot = document.createElement('span'); dot.className = 'dot';
+      if (QLAB[k]) dot.style.background = qColor(k); else dot.style.border = '1px solid var(--color-fg-muted)';
+      const txt = document.createElement('span'); txt.textContent = k;
+      s.append(dot, txt); td.append(s);
+      return td;
+    };
+    rows.forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = enc(r.pokemon);
+      const tdP = document.createElement('td'); tdP.className = 'ob-name';
+      const tP = document.createElement('span'); tP.textContent = r.pokemon;
+      tdP.append(sprite(r.pokemon, 24), tP);
+      const tdE = document.createElement('td'); tdE.className = 'num'; tdE.textContent = fmtDecSigne.format(r.ecart_pts);
+      tr.append(tdP, cellQ(r.quadrant_avant), cellQ(r.quadrant), tdE);
+      tr.addEventListener('click', () => openFiche(r.pokemon));
+      body.append(tr);
+    });
+  }
+
+  // trajectoire du Pokémon choisi, aux quatre paliers
+  const selectEvo = q('#ob-select-evo');
+  if (selectEvo) selectEvo.addEventListener('change', () => pick(selectEvo.value));
+  function drawEvoSelect(u) {
+    if (!selectEvo || u.status !== 'ok') return;
+    if (selectEvo.options.length !== u.data.length) selectEvo.replaceChildren(...u.data.map((r) => new Option(r.pokemon, r.pokemon)));
+    selectEvo.value = selected();
+  }
+  function drawTraj(um) {
+    const box = evoBoxes.traj; if (!box) return;
+    viderBoite(box); hideTip('traj');
+    if (um.status === 'error') return echecBoite(box);
+    if (um.status !== 'ok' || !um.data.length) return;
+    const sel = selected(), pal = selPalier();
+    const mois = [...new Set(um.data.map((r) => r.mois))].sort();
+    const parMois = new Map(um.data.filter((r) => r.pokemon === sel).map((r) => [r.mois, r]));
+    if (!parMois.size) return;
+    const val = (mo, p) => (parMois.has(mo) ? parMois.get(mo)[USAGE_FIELD[p]] : 0);
+    const series = PALIERS.map((p) => ({ palier: p, pts: mois.map((mo) => ({ mois: mo, v: val(mo, p) })) }))
+      .sort((a, b) => (a.palier === pal) - (b.palier === pal));
+    const W = Math.max(280, box.clientWidth), H = 260;
+    const svg = d3.select(box).insert('svg', ':first-child').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`)
+      .attr('role', 'img').attr('aria-label', `Usage de ${sel} chaque mois, aux quatre paliers`);
+    const dernier = (s) => s.pts[s.pts.length - 1].v;
+    const finLab = (s) => `${PAL_COURT[s.palier]} ${fmtPct.format(dernier(s))}`;
+    const endW = mesurer(svg, series.map(finLab));
+    const yMax = d3.max(series, (s) => d3.max(s.pts, (p) => p.v)) || 0.01;
+    const top = 10, bottom = 26;
+    const y = d3.scaleLinear([0, yMax * 1.1], [H - bottom, top]).nice();
+    const fmtY = yMax < 0.05 ? new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1 }) : fmtTick;
+    const yt = y.ticks(4);
+    const tickW = mesurer(svg, yt.map((t) => fmtY.format(t)));
+    const m = { top, right: endW + 16, bottom, left: tickW + 10 };
+    const x = d3.scalePoint(mois, [m.left + 10, W - m.right]).padding(mois.length > 1 ? 0 : 0.5);
+    svg.append('g').selectAll('line').data(yt).join('line').attr('x1', m.left).attr('x2', W - m.right + 6).attr('y1', y).attr('y2', y).style('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('text').data(yt).join('text').call(police).attr('x', m.left - 6).attr('y', y).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .style('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums').text((t) => fmtY.format(t));
+    const pas = Math.max(1, Math.ceil(mois.length * 72 / Math.max(1, W - m.left - m.right)));
+    svg.append('g').selectAll('text').data(mois.filter((mo, i) => (mois.length - 1 - i) % pas === 0)).join('text').call(police)
+      .attr('x', (mo) => x(mo)).attr('y', H - 6).attr('text-anchor', 'middle').style('fill', 'var(--color-fg-muted)').text(moisCourt);
+    const couleur = (s) => (s.palier === pal ? dash.colors[0] : 'var(--cds-chart-muted)');
+    const trace = d3.line().x((p) => x(p.mois)).y((p) => y(p.v));
+    const gs = svg.append('g').selectAll('g.s').data(series).join('g').attr('class', 's');
+    gs.append('path').attr('d', (s) => trace(s.pts)).style('fill', 'none').style('stroke', couleur).style('stroke-width', 2)
+      .style('stroke-linecap', 'round').style('stroke-linejoin', 'round');
+    gs.selectAll('circle').data((s) => s.pts.map((p) => ({ ...p, s }))).join('circle')
+      .attr('cx', (p) => x(p.mois)).attr('cy', (p) => y(p.v)).attr('r', (p) => (p.s.palier === pal ? 4.5 : 3.5))
+      .style('fill', (p) => couleur(p.s)).style('stroke', 'var(--color-panel)').style('stroke-width', 1.5);
+    // étiquettes de fin de ligne, écartées pour ne pas se chevaucher
+    const labs = series.map((s) => ({ s, y: y(dernier(s)) })).sort((a, b) => a.y - b.y);
+    const ecart = 15;
+    for (let i = 1; i < labs.length; i++) if (labs[i].y - labs[i - 1].y < ecart) labs[i].y = labs[i - 1].y + ecart;
+    const bas = H - m.bottom;
+    if (labs.length && labs[labs.length - 1].y > bas) {
+      labs[labs.length - 1].y = bas;
+      for (let i = labs.length - 2; i >= 0; i--) if (labs[i + 1].y - labs[i].y < ecart) labs[i].y = labs[i + 1].y - ecart;
+    }
+    const xFin = x(mois[mois.length - 1]) + 9;
+    svg.append('g').selectAll('text').data(labs).join('text').call(police).attr('x', xFin).attr('y', (l) => l.y).attr('dy', '0.35em')
+      .style('fill', (l) => (l.s.palier === pal ? 'var(--color-fg)' : 'var(--color-fg-muted)'))
+      .style('font-weight', (l) => (l.s.palier === pal ? 600 : 400))
+      .style('font-variant-numeric', 'tabular-nums')
+      .text((l) => finLab(l.s));
+    const repere = svg.append('line').attr('y1', m.top).attr('y2', H - m.bottom).style('stroke', 'var(--cds-chart-reference)').style('opacity', 0);
+    svg.append('rect').attr('x', m.left).attr('y', m.top).attr('width', Math.max(0, W - m.right - m.left)).attr('height', H - m.top - m.bottom)
+      .style('fill', 'transparent')
+      .on('mousemove', (e) => {
+        const [px] = d3.pointer(e);
+        const mo = mois.reduce((best, cur) => (Math.abs(x(cur) - px) < Math.abs(x(best) - px) ? cur : best), mois[0]);
+        repere.attr('x1', x(mo)).attr('x2', x(mo)).style('opacity', 1);
+        showTip('traj', e, `${sel} · ${moisLong(mo)}`,
+          [pal, ...PALIERS.filter((p) => p !== pal)].map((p) => `${majuscule(PALIER_LABEL[p])} : ${fmtPct.format(val(mo, p))}`));
+      })
+      .on('mouseleave', () => { repere.style('opacity', 0); hideTip('traj'); });
+  }
+
+  let evoEntered = false;
+  function drawEvolution() {
+    const per = ligne0('periode');
+    const assez = !!per && per.nb_mois >= 2;
+    const attente = q('.ob-evo-wait'), corps = q('.ob-evo-body'), lead = q('.ob-evo-lead');
+    if (attente) attente.hidden = !per || assez;
+    if (corps) corps.hidden = !!per && !assez;
+    if (lead) lead.hidden = !!per && !assez;
+    qa('.ob-pal-lab').forEach((el) => { el.textContent = PALIER_LABEL[selPalier()]; });
+    drawDumbLegend(per);
+    drawQPhrase(dash.data('quadrants_bilan'));
+    drawQChanges(dash.data('quadrants_suivi'), per);
+    drawEvoSelect(dash.data('usage'));
+    // les graphiques dépendent de la largeur : on ne les dessine que visibles
+    if (current !== 'evolution' || (per && !assez)) return;
+    const v = dash.data('variations');
+    const grow = !evoEntered && v.status === 'ok' && v.data.length > 0 && !reduce();
+    if (v.status === 'ok' && v.data.length) evoEntered = true;
+    drawMovers(v, per, grow);
+    drawDumbbell(v, per, grow);
+    drawQBilan(dash.data('quadrants_bilan'), per);
+    drawTraj(dash.data('usage_mensuel'));
+  }
+
+  // ---------- calculateur de dégâts ----------
+  // Moteur : window.NCP_CALC (fichier calc-moteur.js, licence MIT). Données : jeu de données « calculateur ».
+  const CALC_STATS = [['hp', 'PV'], ['at', 'Attaque'], ['df', 'Défense'], ['sa', 'Atq. Spé.'], ['sd', 'Déf. Spé.'], ['sp', 'Vitesse']];
+  const CALC_STAT_SHORT = { at: 'Atq', df: 'Déf', sa: 'Atq. Spé.', sd: 'Déf. Spé.', sp: 'Vit' };
+  const CALC_STATUS = [['Healthy', 'Aucun'], ['Burned', 'Brûlé'], ['Paralyzed', 'Paralysé'], ['Poisoned', 'Empoisonné'], ['Badly Poisoned', 'Gravement empoisonné'], ['Asleep', 'Endormi'], ['Frozen', 'Gelé']];
+  const CALC_WEATHER = [['', 'Aucune'], ['Sun', 'Soleil'], ['Rain', 'Pluie'], ['Sand', 'Tempête de sable'], ['Snow', 'Neige']];
+  const CALC_TERRAIN = [['', 'Aucun'], ['Electric', 'Champ Électrifié'], ['Grassy', 'Champ Herbu'], ['Misty', 'Champ Brumeux'], ['Psychic', 'Champ Psychique']];
+  const CALC_SIDE = [['reflect', 'Reflect'], ['lightScreen', 'Light Screen'], ['auroraVeil', 'Aurora Veil'], ['helpingHand', 'Helping Hand'], ['friendGuard', 'Friend Guard'], ['tailwind', 'Tailwind'], ['steelySpirit', 'Steely Spirit']];
+  const AUTO_FIELD = {
+    weather: { Drought: 'Sun', Drizzle: 'Rain', 'Sand Stream': 'Sand', 'Snow Warning': 'Snow', 'Orichalcum Pulse': 'Sun' },
+    terrain: { 'Grassy Surge': 'Grassy', 'Misty Surge': 'Misty', 'Electric Surge': 'Electric', 'Psychic Surge': 'Psychic', 'Hadron Engine': 'Electric' },
+  };
+  // talents à case « actif », cochée ou non par défaut comme dans le calculateur d'origine
+  const TOGGLE_ON = ['Intimidate', 'Slow Start', 'Protean', 'Libero', 'Intrepid Sword', 'Dauntless Shield', 'Supersweet Syrup'];
+  const TOGGLE_OFF = ['Flash Fire', 'Plus', 'Minus', 'Trace', 'Stakeout', 'Sand Spit', 'Battle Bond', 'Electromorphosis', 'Wind Power', 'Seed Sower'];
+  const TIMES_LABEL = { 'Rage Fist': 'Coups reçus', 'Last Respects': 'Alliés K.O.' };
+  const NCP_NAME_SPECIAL = { Gourgeist: 'Gourgeist-Average', Lycanroc: 'Lycanroc-Midday', 'Meowstic-F-Mega': 'Mega Meowstic', 'Meowstic-M-Mega': 'Mega Meowstic' };
+  // noms Smogon vers noms du calculateur : Charizard-Mega-Y devient Mega Charizard Y
+  const toNcp = (n) => {
+    if (NCP_NAME_SPECIAL[n]) return NCP_NAME_SPECIAL[n];
+    const m = /^(.*)-Mega(?:-([XYZ]))?$/.exec(n);
+    return m ? `Mega ${m[1]}${m[2] ? ` ${m[2]}` : ''}` : n;
+  };
+  const fmtCalc = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const fmtChance = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
+  const calcPct = (v) => `${fmtCalc.format(v)} %`;
+  const pctRange = (a, b) => (a === b ? calcPct(a) : `${fmtCalc.format(a)} à ${calcPct(b)}`);
+  const SIDE_LAB = ['A', 'B'];
+  const calcRoot = q('#calculateur');
+  const calc = {
+    ready: false, built: false, data: null, sides: [null, null], ui: [null, null], fieldUi: null,
+    field: { format: 'Doubles', weather: '', terrain: '', gravity: false, sides: [{}, {}] },
+    manual: { weather: '', terrain: '' }, from: { weather: null, terrain: null },
+    pick: null, result: null, error: null, cur: null,
+  };
+
+  // verdict de K.O. du moteur, en français ; le texte anglais d'origine reste dans la ligne à copier
+  const KO_AFTER = [
+    [/^(\d+) layers? of Spikes$/, (m) => `${m[1]} couche${m[1] === '1' ? '' : 's'} de Spikes`],
+    [/^sandstorm damage$/, () => 'la tempête de sable'],
+    [/^hail damage$/, () => 'la grêle'],
+    [/^poison damage$/, () => 'le poison'],
+    [/^toxic damage$/, () => 'le poison grave'],
+    [/^burn damage$/, () => 'la brûlure'],
+    [/^reduced burn damage$/, () => 'la brûlure (dégâts réduits)'],
+    [/^binding damage$/, () => 'le piège'],
+    [/^ghost Curse$/, () => 'Curse (type Spectre)'],
+    [/^extra Salt Cure damage$/, () => 'Salt Cure (dégâts renforcés)'],
+    [/^(Ripen |Gluttony )?(.+) recovery$/, (m) => `le soin de ${m[2]}${m[1] ? ` (${m[1].trim()})` : ''}`],
+    [/^(.+) damage$/, (m) => `les dégâts de ${m[1]}`],
+  ];
+  const KO_FIXED = {
+    "It's a status move, it won't deal damage.": 'Capacité de statut : pas de dégâts.',
+    'No damage for you': 'Aucun dégât.',
+    'The battlers shared their pain!': 'Pain Split : les deux Pokémon mettent leurs PV en commun.',
+    'possibly the worst move ever': 'Pas de K.O. en 9 coups ou moins.',
+    'the Water-Type attack evaporated in the harsh sunlight': "L'attaque de type Eau s'évapore sous le soleil intense.",
+    'the Fire-Type attack fizzled out in the heavy rain': "L'attaque de type Feu s'éteint sous la pluie battante.",
+  };
+  function koFr(t) {
+    if (!t) return '';
+    if (KO_FIXED[t]) return KO_FIXED[t];
+    const after = (s) => {
+      if (!s) return '';
+      const fr = s.split(/, and |, | and /).map((p) => {
+        for (const [re, f] of KO_AFTER) { const m = re.exec(p); if (m) return f(m); }
+        return p;
+      });
+      return ` après ${fr.length > 1 ? `${fr.slice(0, -1).join(', ')} et ${fr[fr.length - 1]}` : fr[0]}`;
+    };
+    const chance = (s) => (s === '<0.01' ? 'moins de 0,01' : s === '>99.99' ? 'plus de 99,99' : fmtChance.format(Number(s)));
+    let m = /^guaranteed (O|\d)HKO(?: after (.+))?$/.exec(t);
+    if (m) return `${m[1]}HKO garanti${after(m[2])}`;
+    m = /^(<0\.01|>99\.99|\d+(?:\.\d+)?)% chance to (O|\d)HKO(?: after (.+))?$/.exec(t);
+    if (m) return `${chance(m[1])} % de chances ${m[2] === 'O' ? "d'" : 'de '}${m[2]}HKO${after(m[3])}`;
+    m = /^possible (\d)HKO(?: after (.+))?$/.exec(t);
+    if (m) return `${m[1]}HKO possible${after(m[2])}`;
+    return t;
+  }
+
+  // le fichier JSON est un objet ; on accepte aussi une ligne unique ou des valeurs en texte JSON
+  function calcDataset() {
+    const d = dash.data('calculateur');
+    if (d.status !== 'ok' || !d.data) return null;
+    const x = Array.isArray(d.data) ? d.data[0] : d.data;
+    if (!x || typeof x !== 'object') return null;
+    const out = {};
+    try {
+      ['pokedex', 'moves', 'items', 'abilities', 'typeChart', 'natures', 'lockItems', 'zmoves', 'maxmoves', 'gmaxType', 'gmaxLookup', 'source'].forEach((k) => {
+        if (x[k] != null) out[k] = typeof x[k] === 'string' ? JSON.parse(x[k]) : x[k];
+      });
+    } catch (e) { return null; }
+    if (!out.lockItems) out.lockItems = {};
+    return out.pokedex && out.moves && out.typeChart && out.natures && out.items && out.abilities ? out : null;
+  }
+
+  const abilityToggles = (ab) => TOGGLE_ON.includes(ab) || TOGGLE_OFF.includes(ab);
+  const abilityIsOn = (s) => (s.abilityOn != null ? s.abilityOn : TOGGLE_ON.includes(s.ability));
+  const autoStatus = (item) => (item === 'Flame Orb' ? 'Burned' : item === 'Toxic Orb' ? 'Badly Poisoned' : null);
+
+  function buildRows(name, palier) {
+    const b = dash.data('builds');
+    if (b.status !== 'ok') return { rows: [], palier: null };
+    let rows = b.data.filter((r) => r.pokemon === name && Number(r.palier) === palier);
+    if (rows.length) return { rows, palier };
+    rows = b.data.filter((r) => r.pokemon === name && Number(r.palier) === 0);
+    return { rows, palier: rows.length ? 0 : null };
+  }
+  const ranked = (rows, cat, ok) => rows.filter((r) => r.categorie === cat && ok(r.valeur))
+    .sort((a, c) => Number(c.adoption) - Number(a.adoption)).map((r) => r.valeur);
+
+  // set le plus joué : objet, talent, spread (nature et points) et les quatre capacités les plus adoptés
+  function topSet(name) {
+    const D = calc.data, ncp = toNcp(name), entry = D.pokedex[ncp] || {};
+    const { rows, palier } = buildRows(name, selPalier());
+    const lock = D.lockItems[ncp];
+    const item = lock || ranked(rows, 'Objet', (v) => D.items.includes(v))[0] || '';
+    const ability = ranked(rows, 'Talent', (v) => D.abilities.includes(v))[0] || entry.ab || '';
+    const spread = ranked(rows, 'Spread', (v) => v.includes(':'))[0];
+    let nature = 'Serious';
+    const sps = { hp: 0, at: 0, df: 0, sa: 0, sd: 0, sp: 0 };
+    if (spread) {
+      const [nat, pts] = spread.split(':');
+      if (D.natures[nat.trim()]) nature = nat.trim();
+      pts.split('/').map(Number).forEach((v, i) => { if (CALC_STATS[i] && Number.isFinite(v)) sps[CALC_STATS[i][0]] = Math.min(32, Math.max(0, v)); });
+    }
+    const moves = ranked(rows, 'Capacité', (v) => !!D.moves[v] && v !== '(No Move)').slice(0, 4);
+    while (moves.length < 4) moves.push('(No Move)');
+    return {
+      name, forme: null, nature, ability, abilityOn: null, item, status: autoStatus(item) || 'Healthy', toxic: 1, hpPercent: 100,
+      sps, boosts: { at: 0, df: 0, sa: 0, sd: 0, sp: 0 }, supreme: 0,
+      moves, crit: moves.map((m) => !!(D.moves[m] || {}).alwaysCrit), hits: [null, null, null, null], double: [false, false, false, false], times: [0, 0, 0, 0],
+      palier, custom: false,
+    };
+  }
+
+  const toSpec = (s) => ({
+    name: toNcp(s.name), forme: s.forme, nature: s.nature, ability: s.ability, abilityOn: s.abilityOn, item: s.item,
+    status: s.status, toxicCounter: s.toxic, hpPercent: s.hpPercent, sps: s.sps, boosts: s.boosts, supremeOverlord: s.supreme,
+    moves: s.moves, moveOpts: s.moves.map((m, j) => ({ crit: !!s.crit[j], hits: s.hits[j], double: !!s.double[j], timesAffected: s.times[j] })),
+  });
+
+  // météo et champ posés par un talent, comme dans le calculateur d'origine : le dernier talent choisi l'emporte,
+  // et le réglage manuel revient quand plus aucun talent ne l'impose
+  const autoFor = (s, kind) => {
+    if (!s) return null;
+    if (kind === 'weather' && s.ability === 'Sand Spit') return abilityIsOn(s) ? 'Sand' : null;
+    if (kind === 'terrain' && s.ability === 'Seed Sower') return abilityIsOn(s) ? 'Grassy' : null;
+    return AUTO_FIELD[kind][s.ability] || null;
+  };
+  function applyAutoField(i) {
+    ['weather', 'terrain'].forEach((kind) => {
+      const set = autoFor(calc.sides[i], kind), other = autoFor(calc.sides[1 - i], kind);
+      if (set) { calc.field[kind] = set; calc.from[kind] = i; }
+      else if (calc.from[kind] === i) {
+        calc.field[kind] = other || calc.manual[kind];
+        calc.from[kind] = other ? 1 - i : null;
+      }
+    });
+  }
+
+  const elt = (tag, props = {}, kids = []) => {
+    const e = document.createElement(tag);
+    Object.entries(props).forEach(([k, v]) => {
+      if (v == null) return;
+      if (k === 'text') e.textContent = v;
+      else if (k === 'class') e.className = v;
+      else e.setAttribute(k, v);
+    });
+    kids.forEach((c) => { if (c) e.append(c); });
+    return e;
+  };
+  const fillOptions = (sel, groups) => {
+    sel.replaceChildren();
+    groups.forEach(([label, opts]) => {
+      if (!opts.length) return;
+      const parent = label ? elt('optgroup', { label }) : sel;
+      opts.forEach(([v, t]) => parent.append(new Option(t, v)));
+      if (label) sel.append(parent);
+    });
+  };
+  // valeur d'un menu, ajoutée si elle manque ; un champ en cours de saisie n'est pas réécrit
+  const setSel = (sel, v) => {
+    const s = v == null ? '' : String(v);
+    if (![...sel.options].some((o) => o.value === s)) sel.append(new Option(s || '(aucun)', s));
+    sel.value = s;
+  };
+  const setNum = (input, v) => { if (input !== document.activeElement) input.value = String(v); };
+  const natureLabel = (n) => {
+    const m = calc.data.natures[n] || ['', ''];
+    return m[0] ? `${n} (+${CALC_STAT_SHORT[m[0]]}, -${CALC_STAT_SHORT[m[1]]})` : `${n} (neutre)`;
+  };
+  const check = (id, label) => {
+    const input = elt('input', { type: 'checkbox', id });
+    return [input, elt('label', { class: 'ob-cp-check', for: id }, [input, document.createTextNode(` ${label}`)])];
+  };
+
+  function buildPanel(i, groups) {
+    const box = q(`.ob-cp[data-side="${i}"]`);
+    if (!box) return;
+    const D = calc.data, id = (k) => `calc-${SIDE_LAB[i].toLowerCase()}-${k}`;
+    const ui = { box };
+    ui.sprite = elt('span', { class: 'ob-cp-spr' });
+    ui.poke = elt('select', { id: id('pokemon'), 'aria-label': `Pokémon ${SIDE_LAB[i]}` });
+    fillOptions(ui.poke, groups);
+    ui.forme = elt('select', { id: id('forme'), 'aria-label': `Forme du Pokémon ${SIDE_LAB[i]}` });
+    ui.formeWrap = elt('span', { class: 'ob-cp-forme' }, [ui.forme]);
+    ui.reset = elt('button', { type: 'button', class: 'ob-calc-btn', text: 'Set le plus joué' });
+    ui.note = elt('p', { class: 'ob-cp-note' });
+    box.append(elt('div', { class: 'ob-cp-head' }, [ui.sprite, ui.poke, ui.formeWrap]), elt('div', { class: 'ob-cp-setline' }, [ui.note, ui.reset]));
+
+    ui.nature = elt('select', { id: id('nature') });
+    fillOptions(ui.nature, [[null, Object.keys(D.natures).sort().map((n) => [n, natureLabel(n)])]]);
+    ui.ability = elt('select', { id: id('talent') });
+    [ui.abOn, ui.abOnWrap] = check(id('talent-actif'), 'actif');
+    ui.supreme = elt('select', { 'aria-label': 'Alliés K.O. (Supreme Overlord)' });
+    fillOptions(ui.supreme, [[null, [0, 1, 2, 3, 4, 5].map((n) => [String(n), `${n} allié${n > 1 ? 's' : ''} K.O.`])]]);
+    ui.item = elt('select', { id: id('objet') });
+    ui.status = elt('select', { id: id('statut') });
+    fillOptions(ui.status, [[null, CALC_STATUS]]);
+    ui.toxic = elt('select', { 'aria-label': 'Compteur du poison grave' });
+    fillOptions(ui.toxic, [[null, Array.from({ length: 15 }, (_, k) => [String(k + 1), `${k + 1}/16`])]]);
+    ui.hp = elt('input', { type: 'number', id: id('pv'), min: '1', max: '100', step: '1', inputmode: 'numeric' });
+    const row = (k, label, ...ctrls) => [elt('label', { for: id(k), text: label }), elt('span', { class: 'ob-cp-ctrl' }, ctrls)];
+    box.append(elt('div', { class: 'ob-cp-fields' }, [
+      ...row('nature', 'Nature', ui.nature),
+      ...row('talent', 'Talent', ui.ability, ui.abOnWrap, ui.supreme),
+      ...row('objet', 'Objet', ui.item),
+      ...row('statut', 'Statut', ui.status, ui.toxic),
+      ...row('pv', 'PV restants (%)', ui.hp),
+    ]));
+
+    ui.sp = {}; ui.base = {}; ui.total = {}; ui.boost = {};
+    const tbody = elt('tbody');
+    CALC_STATS.forEach(([k, lab]) => {
+      ui.sp[k] = elt('input', { type: 'number', min: '0', max: '32', step: '1', inputmode: 'numeric', 'aria-label': `Points de statistique, ${lab}` });
+      ui.base[k] = elt('td', { class: 'num' });
+      ui.total[k] = elt('td', { class: 'num ob-cp-total' });
+      let boostCell = elt('td');
+      if (k !== 'hp') {
+        ui.boost[k] = elt('select', { 'aria-label': `Modificateur, ${lab}` });
+        fillOptions(ui.boost[k], [[null, [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6].map((v) => [String(v), v > 0 ? `+${v}` : String(v)])]]);
+        boostCell = elt('td', {}, [ui.boost[k]]);
+      }
+      tbody.append(elt('tr', {}, [elt('th', { scope: 'row', text: lab }), ui.base[k], elt('td', {}, [ui.sp[k]]), ui.total[k], boostCell]));
+    });
+    ui.spTotal = elt('p', { class: 'ob-cp-note ob-cp-sptot' });
+    box.append(elt('table', { class: 'ob-cp-stats' }, [
+      elt('thead', {}, [elt('tr', {}, [elt('th', { scope: 'col', text: 'Stat' }), elt('th', { scope: 'col', class: 'num', text: 'Base' }), elt('th', { scope: 'col', text: 'Points' }), elt('th', { scope: 'col', class: 'num', text: 'Total' }), elt('th', { scope: 'col', text: 'Modif.' })])]),
+      tbody,
+    ]), ui.spTotal);
+
+    ui.moves = []; ui.crits = []; ui.hits = []; ui.doubles = []; ui.times = []; ui.hitsWrap = []; ui.doubleWrap = []; ui.timesWrap = []; ui.timesLab = [];
+    const mbox = elt('div', { class: 'ob-cp-moves' });
+    for (let m = 0; m < 4; m++) {
+      ui.moves[m] = elt('select', { class: 'mv', 'aria-label': `Capacité ${m + 1} du Pokémon ${SIDE_LAB[i]}` });
+      let critWrap;
+      [ui.crits[m], critWrap] = check(id(`crit-${m}`), 'Critique');
+      ui.hits[m] = elt('select', { 'aria-label': `Nombre de coups, capacité ${m + 1}` });
+      ui.hitsWrap[m] = elt('span', { class: 'ob-cp-check' }, [ui.hits[m]]);
+      [ui.doubles[m], ui.doubleWrap[m]] = check(id(`double-${m}`), 'Puissance doublée');
+      ui.times[m] = elt('select', { id: id(`cumul-${m}`) });
+      fillOptions(ui.times[m], [[null, [0, 1, 2, 3, 4, 5, 6].map((n) => [String(n), String(n)])]]);
+      ui.timesLab[m] = elt('label', { for: id(`cumul-${m}`) });
+      ui.timesWrap[m] = elt('span', { class: 'ob-cp-check' }, [ui.timesLab[m], ui.times[m]]);
+      mbox.append(elt('div', { class: 'ob-cp-move' }, [ui.moves[m], elt('div', { class: 'ob-cp-mopts' }, [critWrap, ui.hitsWrap[m], ui.doubleWrap[m], ui.timesWrap[m]])]));
+    }
+    box.append(elt('h3', { class: 'ob-cp-sub', text: 'Capacités' }), mbox);
+
+    // modifications : on met à jour l'état puis on relance le calcul
+    const S = () => calc.sides[i];
+    const edited = () => { S().custom = true; };
+    const newSet = (name) => {
+      calc.sides[i] = topSet(name);
+      if (calc.pick && calc.pick.side === i) calc.pick = null;
+      refreshLists(i); applyAutoField(i); syncField(); runCalc();
+    };
+    ui.poke.addEventListener('change', () => newSet(ui.poke.value));
+    ui.reset.addEventListener('click', () => newSet(S().name));
+    ui.forme.addEventListener('change', () => { S().forme = ui.forme.value; edited(); runCalc(); });
+    ui.nature.addEventListener('change', () => { S().nature = ui.nature.value; edited(); runCalc(); });
+    ui.ability.addEventListener('change', () => { S().ability = ui.ability.value; S().abilityOn = null; edited(); applyAutoField(i); syncField(); runCalc(); });
+    ui.abOn.addEventListener('change', () => { S().abilityOn = ui.abOn.checked; edited(); applyAutoField(i); syncField(); runCalc(); });
+    ui.supreme.addEventListener('change', () => { S().supreme = Number(ui.supreme.value); edited(); runCalc(); });
+    ui.item.addEventListener('change', () => {
+      const before = autoStatus(S().item), after = autoStatus(ui.item.value);
+      S().item = ui.item.value;
+      if (after) S().status = after; else if (before && S().status === before) S().status = 'Healthy';
+      edited(); runCalc();
+    });
+    ui.status.addEventListener('change', () => { S().status = ui.status.value; edited(); runCalc(); });
+    ui.toxic.addEventListener('change', () => { S().toxic = Number(ui.toxic.value); edited(); runCalc(); });
+    const num = (input, lo, hi, fallback, set) => {
+      const read = (strict) => {
+        const raw = input.value.trim();
+        if (raw === '' && !strict) return null;
+        const v = Math.round(Number(raw));
+        return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
+      };
+      input.addEventListener('input', () => { const v = read(false); if (v != null) { set(v); edited(); runCalc(); } });
+      input.addEventListener('change', () => { const v = read(true); set(v); input.value = String(v); edited(); runCalc(); });
+    };
+    num(ui.hp, 1, 100, 100, (v) => { S().hpPercent = v; });
+    CALC_STATS.forEach(([k]) => {
+      num(ui.sp[k], 0, 32, 0, (v) => { S().sps[k] = v; });
+      if (ui.boost[k]) ui.boost[k].addEventListener('change', () => { S().boosts[k] = Number(ui.boost[k].value); edited(); runCalc(); });
+    });
+    ui.moves.forEach((sel, m) => sel.addEventListener('change', () => {
+      const s = S();
+      s.moves[m] = sel.value; s.crit[m] = !!(calc.data.moves[sel.value] || {}).alwaysCrit;
+      s.hits[m] = null; s.double[m] = false; s.times[m] = 0;
+      edited(); calc.pick = { side: i, idx: m }; runCalc();
+    }));
+    ui.crits.forEach((c, m) => c.addEventListener('change', () => { S().crit[m] = c.checked; edited(); runCalc(); }));
+    ui.hits.forEach((c, m) => c.addEventListener('change', () => { S().hits[m] = Number(c.value); edited(); runCalc(); }));
+    ui.doubles.forEach((c, m) => c.addEventListener('change', () => { S().double[m] = c.checked; edited(); runCalc(); }));
+    ui.times.forEach((c, m) => c.addEventListener('change', () => { S().times[m] = Number(c.value); edited(); runCalc(); }));
+    calc.ui[i] = ui;
+  }
+
+  // listes propres au Pokémon : capacités, talents et objets joués d'abord, puis la liste complète
+  function refreshLists(i) {
+    const ui = calc.ui[i], s = calc.sides[i], D = calc.data;
+    if (!ui || !s) return;
+    const { rows } = buildRows(s.name, selPalier());
+    if (!calc.allMoves) calc.allMoves = Object.keys(D.moves).filter((m) => m !== '(No Move)').sort((a, c) => a.localeCompare(c, 'en')).map((m) => [m, m]);
+    const played = ranked(rows, 'Capacité', (v) => !!D.moves[v] && v !== '(No Move)').map((m) => [m, m]);
+    ui.moves.forEach((sel) => fillOptions(sel, [[null, [['(No Move)', '(aucune)']]], ['Jouées par ce Pokémon', played], ['Toutes les capacités', calc.allMoves]]));
+    const entry = D.pokedex[toNcp(s.name)] || {};
+    const abPlayed = [...new Set([...ranked(rows, 'Talent', (v) => D.abilities.includes(v)), ...(entry.ab ? [entry.ab] : [])])];
+    fillOptions(ui.ability, [['Talents de ce Pokémon', abPlayed.map((a) => [a, a])], ['Tous les talents', [...D.abilities].sort().map((a) => [a, a])]]);
+    const lock = D.lockItems[toNcp(s.name)];
+    const itPlayed = ranked(rows, 'Objet', (v) => D.items.includes(v));
+    fillOptions(ui.item, lock ? [[null, [[lock, lock]]]] : [[null, [['', '(aucun)']]], ['Objets joués par ce Pokémon', itPlayed.map((v) => [v, v])], ['Tous les objets', [...D.items].sort().map((v) => [v, v])]]);
+    ui.item.disabled = !!lock;
+    ui.item.title = lock ? 'Objet imposé par la méga-évolution' : '';
+    const alt = ((D.pokedex[toNcp(s.name)] || {}).formes || []).filter((f) => !f.startsWith('Mega '));
+    ui.formeWrap.hidden = alt.length < 2;
+    fillOptions(ui.forme, [[null, alt.map((f) => [f, f])]]);
+  }
+
+  function syncPanel(i, p) {
+    const ui = calc.ui[i], s = calc.sides[i], D = calc.data;
+    if (!ui || !s) return;
+    setSel(ui.poke, s.name);
+    if (ui.sprite.dataset.name !== s.name) { ui.sprite.replaceChildren(sprite(s.name, 40)); ui.sprite.dataset.name = s.name; }
+    if (!ui.formeWrap.hidden) setSel(ui.forme, window.NCP_CALC.resolveForme(toNcp(s.name), s.forme));
+    setSel(ui.nature, s.nature);
+    setSel(ui.ability, s.ability);
+    ui.abOnWrap.hidden = !abilityToggles(s.ability);
+    ui.abOn.checked = abilityIsOn(s);
+    ui.supreme.hidden = s.ability !== 'Supreme Overlord';
+    setSel(ui.supreme, s.supreme);
+    setSel(ui.item, s.item);
+    setSel(ui.status, s.status);
+    ui.toxic.hidden = s.status !== 'Badly Poisoned';
+    setSel(ui.toxic, s.toxic);
+    setNum(ui.hp, s.hpPercent);
+    CALC_STATS.forEach(([k]) => { setNum(ui.sp[k], s.sps[k]); if (ui.boost[k]) setSel(ui.boost[k], s.boosts[k]); });
+    s.moves.forEach((m, j) => {
+      const d = D.moves[m] || {};
+      setSel(ui.moves[j], m);
+      ui.crits[j].checked = !!s.crit[j];
+      const range = Array.isArray(d.hitRange) && d.hitRange.length === 2 ? d.hitRange : null;
+      ui.hitsWrap[j].hidden = !range;
+      if (range) {
+        const want = range.join('-');
+        if (ui.hits[j].dataset.range !== want) {
+          fillOptions(ui.hits[j], [[null, Array.from({ length: range[1] - range[0] + 1 }, (_, k) => [String(range[0] + k), `${range[0] + k} coup${range[0] + k > 1 ? 's' : ''}`])]]);
+          ui.hits[j].dataset.range = want;
+        }
+        const used = p && p.moves[j] ? p.moves[j].hits : s.hits[j];
+        if (used != null) setSel(ui.hits[j], used);
+      }
+      ui.doubleWrap[j].hidden = !d.canDouble;
+      ui.doubles[j].checked = !!s.double[j];
+      ui.timesWrap[j].hidden = !d.linearAddBP;
+      ui.timesLab[j].textContent = `${TIMES_LABEL[m] || 'Effets cumulés'} `;
+      setSel(ui.times[j], s.times[j]);
+    });
+    const entry = D.pokedex[p ? p.name : toNcp(s.name)] || {};
+    CALC_STATS.forEach(([k]) => {
+      ui.base[k].textContent = entry.bs ? String(entry.bs[k]) : '';
+      ui.total[k].textContent = !p ? '' : fmtInt.format(k === 'hp' ? p.maxHP : p.rawStats[k]);
+    });
+    const tot = CALC_STATS.reduce((t, [k]) => t + (s.sps[k] || 0), 0);
+    ui.spTotal.textContent = `Points de statistique : ${tot} sur 66${tot > 66 ? ', au-delà du maximum du jeu' : ''}.`;
+    ui.spTotal.classList.toggle('ob-cp-over', tot > 66);
+    ui.note.textContent = s.custom ? 'Set modifié à la main.'
+      : s.palier == null ? 'Aucun set publié par Smogon pour ce Pokémon : set vide.'
+        : `Set le plus joué (${PALIER_LABEL[s.palier]}, dernier mois).`;
+  }
+
+  function buildField() {
+    const box = q('.ob-calc-field-body');
+    if (!box) return;
+    const ui = {};
+    const sel = (idName, label, opts) => {
+      const s = elt('select', { id: idName });
+      fillOptions(s, [[null, opts]]);
+      return [elt('label', { for: idName, text: label }), s];
+    };
+    const [fl, fs] = sel('calc-format', 'Format', [['Doubles', 'Combat double'], ['Singles', 'Combat simple']]);
+    const [wl, ws] = sel('calc-meteo', 'Météo', CALC_WEATHER);
+    const [tl, ts] = sel('calc-champ', 'Champ', CALC_TERRAIN);
+    ui.format = fs; ui.weather = ws; ui.terrain = ts;
+    let gWrap;
+    [ui.gravity, gWrap] = check('calc-gravite', 'Gravity');
+    ui.auto = elt('p', { class: 'ob-cp-note ob-cf-auto' });
+    box.append(elt('div', { class: 'ob-cp-fields' }, [fl, fs, wl, ws, tl, ts, elt('span'), gWrap]), ui.auto);
+    ui.side = [{}, {}];
+    const tbody = elt('tbody');
+    CALC_SIDE.forEach(([k, lab]) => {
+      const cells = [0, 1].map((s) => {
+        const c = elt('input', { type: 'checkbox', 'aria-label': `${lab}, côté ${SIDE_LAB[s]}` });
+        ui.side[s][k] = c;
+        c.addEventListener('change', () => { calc.field.sides[s][k] = c.checked; runCalc(); });
+        return elt('td', { class: 'ob-cf-c' }, [c]);
+      });
+      tbody.append(elt('tr', {}, [elt('th', { scope: 'row', text: lab }), ...cells]));
+    });
+    box.append(elt('table', { class: 'ob-cp-stats ob-cf-sides' }, [
+      elt('thead', {}, [elt('tr', {}, [elt('th', { scope: 'col', text: 'Effet' }), elt('th', { scope: 'col', class: 'ob-cf-c', text: 'Côté A' }), elt('th', { scope: 'col', class: 'ob-cf-c', text: 'Côté B' })])]),
+      tbody,
+    ]), elt('p', { class: 'ob-cp-note', text: 'Chaque case vaut pour le côté de ce Pokémon : Reflect côté A protège A, Helping Hand côté A renforce les attaques de A.' }));
+    fs.addEventListener('change', () => { calc.field.format = fs.value; runCalc(); });
+    ws.addEventListener('change', () => { calc.field.weather = ws.value; calc.manual.weather = ws.value; calc.from.weather = null; syncField(); runCalc(); });
+    ts.addEventListener('change', () => { calc.field.terrain = ts.value; calc.manual.terrain = ts.value; calc.from.terrain = null; syncField(); runCalc(); });
+    ui.gravity.addEventListener('change', () => { calc.field.gravity = ui.gravity.checked; runCalc(); });
+    calc.fieldUi = ui;
+  }
+
+  function syncField() {
+    const ui = calc.fieldUi;
+    if (!ui) return;
+    ui.format.value = calc.field.format;
+    ui.weather.value = calc.field.weather;
+    ui.terrain.value = calc.field.terrain;
+    ui.gravity.checked = !!calc.field.gravity;
+    [0, 1].forEach((s) => CALC_SIDE.forEach(([k]) => { ui.side[s][k].checked = !!calc.field.sides[s][k]; }));
+    const notes = ['weather', 'terrain'].filter((k) => calc.from[k] != null && calc.sides[calc.from[k]])
+      .map((k) => `${k === 'weather' ? 'Météo posée' : 'Champ posé'} par ${calc.sides[calc.from[k]].ability} (${calc.sides[calc.from[k]].name})`);
+    ui.auto.textContent = notes.length ? `${notes.join(' ; ')}.` : '';
+    ui.auto.hidden = !notes.length;
+  }
+
+  function runCalc() {
+    if (!calc.ready || !calc.sides[0] || !calc.sides[1]) return;
+    try {
+      calc.result = window.NCP_CALC.run(toSpec(calc.sides[0]), toSpec(calc.sides[1]), calc.field);
+      calc.error = null;
+    } catch (e) {
+      calc.result = null;
+      calc.error = e;
+    }
+    [0, 1].forEach((i) => syncPanel(i, calc.result ? (i ? calc.result.p2 : calc.result.p1) : null));
+    drawCalcResults();
+  }
+
+  // ligne au format des calculateurs Showdown et NCP, en anglais, prête à coller
+  const shareLine = (r, koEn) => {
+    const dmg = r.minPct !== r.maxPct ? `${r.min}-${r.max} (${r.minPct} - ${r.maxPct}%)` : `${r.min} (${r.maxPct}%)`;
+    return `${r.description.replace(/ {2,}/g, ' ')}: ${dmg}${koEn ? ` -- ${koEn}` : ''}`;
+  };
+  const userLine = (r, who) => {
+    const u = r.user;
+    if (!u || (!u[0] && !u[1])) return '';
+    const heal = u[0] < 0 && u[1] < 0;
+    const a = Math.abs(u[0]), b = Math.abs(u[1]);
+    const val = a === b ? calcPct(a) : `${fmtCalc.format(Math.min(a, b))} à ${calcPct(Math.max(a, b))}`;
+    return heal ? `Soin : ${who} récupère ${val} de ses PV.` : `Recul : ${who} perd ${val} de ses PV.`;
+  };
+
+  function drawCalcResults() {
+    const out = q('.ob-calc-out');
+    if (!out) return;
+    const fail = q('.ob-calc-error');
+    fail.hidden = !calc.error;
+    if (calc.error) fail.textContent = `Calcul impossible pour ce duel : ${calc.error.message || calc.error}`;
+    const R = calc.result;
+    qa('.ob-calc-head, .ob-calc-moves, .ob-calc-share, .ob-calc-foot').forEach((el) => { el.hidden = !R; });
+    if (!R) { calc.cur = null; drawBar(); return; }
+    const P = [R.p1, R.p2], names = [calc.sides[0].name, calc.sides[1].name];
+    // même règle que la page d'origine : la plus forte part des PV, en alternant les capacités de A et de B
+    let best = null;
+    for (let idx = 0; idx < 4; idx++) {
+      [0, 1].forEach((side) => {
+        const r = R.results[side][idx], mv = P[side].moves[idx];
+        r.isEmpty = mv.name === '(No Move)';
+        r.isStatus = mv.category === 'Status' && mv.name !== 'Pain Split';
+        r.koEn = mv.isOHKO ? 'OHKO if it hits' : r.ko;
+        r.koFr = mv.isOHKO ? "K.O. en un coup si l'attaque touche." : koFr(r.ko);
+        if (!r.isEmpty && (!best || r.maxPct > best.r.maxPct)) best = { side, idx, r };
+      });
+    }
+    const picked = calc.pick && R.results[calc.pick.side][calc.pick.idx];
+    const cur = picked && !picked.isEmpty ? calc.pick : best ? { side: best.side, idx: best.idx } : null;
+    calc.cur = cur;
+    [0, 1].forEach((side) => {
+      qa(`.ob-calc-dir[data-side="${side}"]`).forEach((h) => { h.textContent = `${names[side]} contre ${names[1 - side]}`; });
+      qa(`.ob-calc-mlist[data-side="${side}"]`).forEach((list) => {
+        list.setAttribute('aria-label', `Capacités de ${names[side]}`);
+        list.replaceChildren(...R.results[side].map((r, idx) => {
+          const txt = r.isEmpty ? '' : r.isStatus ? 'statut' : r.max === 0 ? 'aucun dégât' : pctRange(r.minPct, r.maxPct);
+          const b = elt('button', { type: 'button', class: 'ob-calc-mv' }, [elt('span', { class: 'mv', text: r.isEmpty ? '(aucune)' : r.move }), elt('span', { class: 'pct', text: txt })]);
+          b.disabled = r.isEmpty;
+          b.setAttribute('aria-pressed', String(!!cur && cur.side === side && cur.idx === idx));
+          b.addEventListener('click', () => { calc.pick = { side, idx }; drawCalcResults(); });
+          return b;
+        }));
+      });
+    });
+    const r = cur && R.results[cur.side][cur.idx];
+    qa('.ob-calc-head, .ob-calc-share, .ob-calc-foot').forEach((el) => { el.hidden = !r; });
+    if (!r) { drawBar(); return; }
+    const att = names[cur.side], def = names[1 - cur.side], defHP = P[1 - cur.side].maxHP;
+    const noDmg = r.isStatus || r.max === 0;
+    q('.ob-calc-pct').textContent = noDmg ? r.move : pctRange(r.minPct, r.maxPct);
+    q('.ob-calc-ko').textContent = r.koFr;
+    q('.ob-calc-sub').textContent = noDmg ? `${att} contre ${def}.`
+      : `${r.move}, ${att} contre ${def} : ${r.min === r.max ? fmtInt.format(r.min) : `${fmtInt.format(r.min)} à ${fmtInt.format(r.max)}`} PV sur ${fmtInt.format(defHP)}.`;
+    const ul = userLine(r, att);
+    q('.ob-calc-user').textContent = ul;
+    q('.ob-calc-user').hidden = !ul;
+    q('.ob-calc-desc').textContent = shareLine(r, r.koEn);
+    const flat = Array.isArray(r.damage[0]) ? r.damage.flat() : r.damage;
+    let rolls;
+    if (noDmg) rolls = '';
+    else if (Array.isArray(r.damage[0])) rolls = `Jets de dégâts, coup par coup : ${r.damage.map((h, k) => `coup ${k + 1} : ${h.join(', ')}`).join(' ; ')}.`;
+    else if (new Set(flat).size === 1) rolls = `Dégâts fixes : ${fmtInt.format(flat[0])} PV${r.hits > 1 ? ` par coup, ${r.hits} coups` : ''}.`;
+    else rolls = `${r.hits > 1 ? `Jets de dégâts par coup (${r.hits} coups)` : `Les ${r.damage.length} jets de dégâts possibles`} : ${r.damage.join(', ')}.`;
+    q('.ob-calc-rolls').textContent = rolls;
+    q('.ob-calc-rolls').hidden = !rolls;
+    const s1 = R.p1.stats.sp, s2 = R.p2.stats.sp;
+    q('.ob-calc-speed').textContent = `Vitesse effective : ${names[0]} ${fmtInt.format(s1)}, ${names[1]} ${fmtInt.format(s2)}. `
+      + (s1 === s2 ? "Égalité de vitesse : l'ordre est tiré au sort." : `${s1 > s2 ? names[0] : names[1]} agit en premier, hors priorité et Trick Room.`);
+    drawBar();
+  }
+
+  // rappel du résultat en bas de l'écran pendant qu'on modifie les sets plus bas
+  let calcHeadSeen = true;
+  function drawBar() {
+    const bar = q('.ob-calc-bar');
+    if (!bar) return;
+    const R = calc.result, cur = calc.cur;
+    const r = R && cur ? R.results[cur.side][cur.idx] : null;
+    if (!r) { bar.hidden = true; return; }
+    const noDmg = r.isStatus || r.max === 0;
+    bar.replaceChildren(elt('span', { class: 'mv', text: `${r.move}, ${calc.sides[cur.side].name} contre ${calc.sides[1 - cur.side].name}` }),
+      noDmg ? null : elt('b', { text: pctRange(r.minPct, r.maxPct) }), elt('span', { text: r.koFr }));
+    bar.hidden = calcHeadSeen || current !== 'calculateur';
+  }
+
+  function drawCalc() {
+    if (!calcRoot) return;
+    if (!calc.built && current !== 'calculateur') return;
+    const wait = q('.ob-calc-wait'), out = q('.ob-calc-out'), grid = q('.ob-calc-grid'), swap = q('.ob-calc-swap');
+    if (!calc.ready) {
+      const u = dash.data('usage'), b = dash.data('builds'), c = dash.data('calculateur');
+      const failed = !window.NCP_CALC || [u, b, c].some((d) => d.status === 'error') || (c.status === 'ok' && !calcDataset());
+      const data = failed ? null : calcDataset();
+      if (!data || u.status !== 'ok' || b.status !== 'ok') {
+        wait.hidden = false; out.hidden = true; grid.hidden = true; swap.hidden = true;
+        wait.classList.toggle('dash-skeleton', !failed);
+        if (failed) failLine(wait); else wait.replaceChildren();
+        return;
+      }
+      window.NCP_CALC.init(data);
+      calc.data = data;
+      calc.ready = true;
+    }
+    wait.hidden = true; out.hidden = false; grid.hidden = false; swap.hidden = false;
+    if (calc.built) { drawBar(); return; }
+    const D = calc.data;
+    // un nom que le moteur ne connaît pas (nouveau Pokémon chez Smogon) est laissé de côté
+    const rows = dash.data('usage').data.filter((r) => D.pokedex[toNcp(r.pokemon)]);
+    // les Pokémon joués ce mois-ci, par rang, puis ceux du jeu que personne n'a joués
+    const used = new Set(rows.map((r) => toNcp(r.pokemon)));
+    const formes = new Set(Object.values(D.pokedex).flatMap((e) => e.formes || []));
+    const others = Object.keys(D.pokedex).filter((k) => !used.has(k) && !formes.has(k)).sort().map((k) => [k, k]);
+    const groups = [['Joués ce mois-ci, par rang', rows.map((r) => [r.pokemon, r.pokemon])], ['Autres Pokémon de Champions', others]];
+    [0, 1].forEach((i) => buildPanel(i, groups));
+    buildField();
+    const a = rows.some((r) => r.pokemon === selected()) ? selected() : rows[0].pokemon;
+    const bName = (rows.find((r) => r.pokemon !== a) || rows[0]).pokemon;
+    calc.sides = [topSet(a), topSet(bName)];
+    [0, 1].forEach((i) => { refreshLists(i); applyAutoField(i); });
+    calc.built = true;
+    syncField();
+    runCalc();
+    swap.addEventListener('click', () => {
+      calc.sides.reverse();
+      calc.field.sides.reverse();
+      ['weather', 'terrain'].forEach((k) => { if (calc.from[k] != null) calc.from[k] = 1 - calc.from[k]; });
+      if (calc.pick) calc.pick = { side: 1 - calc.pick.side, idx: calc.pick.idx };
+      [0, 1].forEach(refreshLists);
+      syncField();
+      runCalc();
+    });
+    const copy = q('.ob-calc-copy');
+    copy.addEventListener('click', async () => {
+      const el = q('.ob-calc-desc');
+      let ok = false;
+      try { await navigator.clipboard.writeText(el.textContent); ok = true; } catch (e) { ok = false; }
+      if (!ok) {
+        const range = document.createRange(); range.selectNodeContents(el);
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      }
+      copy.textContent = ok ? 'Copié' : 'Texte sélectionné';
+      setTimeout(() => { copy.textContent = 'Copier'; }, 1600);
+    });
+    const bar = q('.ob-calc-bar');
+    bar.addEventListener('click', () => q('#calcul').scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'start' }));
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver((entries) => { calcHeadSeen = entries.some((e) => e.isIntersecting); drawBar(); }).observe(q('.ob-calc-head'));
+    }
+  }
+
+  // depuis la fiche : ouvre le calculateur avec ce Pokémon en A
+  const toCalc = q('.ob-to-calc');
+  if (toCalc) toCalc.addEventListener('click', () => {
+    if (calc.built && calc.data.pokedex[toNcp(selected())]) {
+      calc.sides[0] = topSet(selected());
+      if (calc.pick && calc.pick.side === 0) calc.pick = null;
+      refreshLists(0); applyAutoField(0); syncField(); runCalc();
+    }
+    showTab('calculateur');
+    q('.ob-tabs').scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'nearest' });
+  });
+
+  // ---------- onglets ----------
+  const tabs = qa('.ob-tab');
+  const panels = qa('.ob-panel');
+  let current = 'apercu';
+
+  function showTab(id, focus) {
+    if (!panels.some((p) => p.id === id)) id = 'apercu';
+    const changed = id !== current;
+    current = id;
+    tabs.forEach((t) => {
+      const on = t.dataset.tab === id;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+    });
+    panels.forEach((p) => { p.hidden = p.id !== id; });
+    tip.hidden = true; qtip.hidden = true; Object.keys(evoTips).forEach(hideTip);
+    if (typeof dash.setLink === 'function') dash.setLink(id);
+    if (changed) render();
+  }
+  function openFiche(name) {
+    pick(name);
+    showTab('pokemon');
+    q('.ob-tabs').scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  tabs.forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
+  q('.ob-tabs').addEventListener('keydown', (e) => {
+    const i = tabs.findIndex((t) => t.dataset.tab === current);
+    let n = null;
+    if (e.key === 'ArrowRight') n = (i + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') n = 0;
+    else if (e.key === 'End') n = tabs.length - 1;
+    if (n === null) return;
+    e.preventDefault();
+    showTab(tabs[n].dataset.tab, true);
+  });
+
+  // ouverture directe par lien : #pokemon, ou l'id d'une carte (#fiche, #quadrants...)
+  (() => {
+    const h = decodeURIComponent((location.hash || '').slice(1));
+    if (!h) return;
+    const target = root.querySelector(`#${CSS.escape(h)}`);
+    const panel = target && (target.classList.contains('ob-panel') ? target : target.closest('.ob-panel'));
+    if (panel && panel.id !== 'apercu') {
+      current = panel.id;
+      tabs.forEach((t) => { const on = t.dataset.tab === current; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+      panels.forEach((p) => { p.hidden = p.id !== current; });
+    }
+  })();
+
+  // ---------- rendu ----------
+  function render() {
+    const u = dash.data('usage');
+    const s = dash.data('synthese');
+    const b = dash.data('builds');
+    const t = dash.data('coequipiers');
+    const c = dash.data('counters');
+    const qd = dash.data('quadrants');
+    const sd = dash.data('seuils');
+    const visible = current === 'apercu';
+    const first = visible && !entered && u.status === 'ok' && s.status === 'ok';
+    drawHead(u, s);
+    drawPodium(u);
+    // les graphiques dépendent de la largeur : on ne les dessine que visibles
+    if (visible) {
+      drawChart(u, first && !reduce());
+      drawQuad(qd, sd, first && !reduce() && qd.status === 'ok');
+    }
+    drawSeg();
+    drawFiche(u, b, t);
+    drawStats(b, dash.data('natures'), dash.data('points_moyens'));
+    drawCounters(c);
+    drawTable(u);
+    fillRow0('periode');
+    drawDeltas();
+    fillRow0('faits_marquants');
+    drawEvolution();
+    drawCalc();
+    if (first) {
+      entered = true;
+      const blocks = [...qa('.ob-kpi'), ...qa('.ob-pod'), ...qa('#apercu .ob-card')];
+      blocks.forEach((el, i) => { el.style.setProperty('--i', String(i)); el.classList.add('ob-enter'); });
+      const syn = s.data[0];
+      const fmts = { equipes: (v) => fmtInt.format(Math.round(v)), nb_pokemon: (v) => fmtInt.format(Math.round(v)), nb_sup5: (v) => fmtInt.format(Math.round(v)), part_top10: (v) => fmtPct.format(v) };
+      qa('.ob-kpis .ob-kpi-value[data-row="0"]').forEach((el, i) => countUp(el, syn[el.dataset.field], fmts[el.dataset.field], 150 + i * 70));
+      qa('.ob-pod-val').forEach((el, i) => countUp(el, u.data[i].usage, (v) => fmtPct.format(v), 300 + i * 70));
+    }
+  }
+  dash.onData(render);
+
+  // redessine les graphiques quand la largeur change
+  let lastW = 0, rz = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(rz);
+    rz = setTimeout(() => {
+      const w = root.clientWidth;
+      if (w === lastW) return;
+      lastW = w;
+      if (current === 'apercu') {
+        drawChart(dash.data('usage'), false);
+        drawQuad(dash.data('quadrants'), dash.data('seuils'), false);
+      }
+      if (current === 'evolution') drawEvolution();
+    }, 150);
+  });
+</script>

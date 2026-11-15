@@ -1,0 +1,118 @@
+name: Site
+
+# Teste le serveur à chaque modification, puis déploie le site sur Cloud Run :
+# - à chaque push sur main qui touche le site, le calculateur ou les données ;
+# - après l'ingestion mensuelle (ses commits de données ne déclenchent pas d'autre workflow) ;
+# - à la demande (Actions, Site, Run workflow), par exemple après un ajout de compte.
+# Le déploiement reste inactif tant que la variable GCP_PROJECT_ID n'existe pas (voir site/README.md).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "calculateur/dist/**"
+      - "data/dashboard/**"
+      - ".dockerignore"
+      - ".github/workflows/site.yml"
+  workflow_run:
+    workflows: ["Ingestion mensuelle Smogon"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            site/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('site/Cargo.lock') }}
+
+      - name: Tests du serveur
+        working-directory: site
+        run: cargo test --locked
+
+  deploiement:
+    needs: tests
+    if: vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION || 'europe-west1' }}
+      SERVICE: vgc-meta-overview
+    steps:
+      - uses: actions/checkout@v4
+
+      # connexion à Google Cloud sans clé stockée : fédération d'identité (site/deploy/setup-gcp.sh)
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github
+          service_account: github-deploy@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Illustration d'en-tête (facultative, gardée hors du dépôt public)
+        env:
+          ART: ${{ secrets.VGC_ART_WEBP }}
+        run: |
+          if [ -n "$ART" ]; then
+            printf "window.OB_ART={dragona:'data:image/webp;base64,%s'};\n" "$ART" > site/static/art.js
+          fi
+
+      - name: Construction de l'image
+        run: |
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT/vgc/site:$GITHUB_SHA"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          docker build -f site/Dockerfile -t "$IMAGE" .
+
+      - name: Comptes et configuration du service
+        env:
+          USERS: ${{ vars.VGC_USERS }}
+          ADMIN: ${{ vars.VGC_ADMIN }}
+          ADMIN_PASSWORD: ${{ secrets.VGC_ADMIN_PASSWORD }}
+          SESSION_KEY: ${{ secrets.VGC_SESSION_KEY }}
+        run: |
+          set -euo pipefail
+          # compte de l'administrateur, à partir de son mot de passe gardé dans les secrets du dépôt
+          if [ -n "${ADMIN_PASSWORD:-}" ] && [ -n "${ADMIN:-}" ]; then
+            first="${ADMIN%%,*}"
+            line=$(printf '%s\n' "$ADMIN_PASSWORD" | docker run --rm -i "$IMAGE" hash-password --stdin "$first")
+            others=$(printf '%s\n' "${USERS:-}" | grep -v "^${first}:" || true)
+            USERS=$(printf '%s\n%s\n' "$others" "$line")
+          fi
+          # contrôle des comptes, de la clé et des fichiers avant toute publication
+          docker run --rm -e VGC_USERS="${USERS:-}" -e VGC_ADMIN="${ADMIN:-}" -e VGC_SESSION_KEY="${SESSION_KEY:-}" "$IMAGE" check
+          jq -n --arg u "${USERS:-}" --arg a "${ADMIN:-}" --arg k "${SESSION_KEY:-}" \
+            '{VGC_USERS: $u, VGC_ADMIN: $a, VGC_SESSION_KEY: $k}' > "$RUNNER_TEMP/env.yaml"
+
+      - name: Publication de l'image
+        run: |
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker push "$IMAGE"
+
+      - name: Déploiement sur Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" --image "$IMAGE" --region "$REGION" --project "$PROJECT" \
+            --service-account "vgc-site@$PROJECT.iam.gserviceaccount.com" \
+            --allow-unauthenticated --min-instances 0 --max-instances 1 --memory 256Mi --cpu 1 \
+            --env-vars-file "$RUNNER_TEMP/env.yaml" --quiet
+          URL=$(gcloud run services describe "$SERVICE" --region "$REGION" --project "$PROJECT" --format 'value(status.url)')
+          echo "Site déployé : $URL" >> "$GITHUB_STEP_SUMMARY"
+          rm -f "$RUNNER_TEMP/env.yaml"

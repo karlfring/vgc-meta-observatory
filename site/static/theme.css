@@ -1,0 +1,127 @@
+/* Thème du site : les variables de couleur, de police et d'espacement que la page du tableau de bord
+   attend du tableau de bord Claude, en clair et en sombre, plus les pages de connexion et d'administration. */
+:root {
+  color-scheme: light dark;
+  --font-anthropic-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-anthropic-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --color-bg: #f9f9f7;
+  --color-panel: #fcfcfb;
+  --color-fg: #0b0b0b;
+  --color-fg-muted: #5c5b57;
+  --color-border-line: #e1e0d9;
+  --color-bad: #d03b3b;
+  --cds-chart-grid: rgba(11, 11, 11, 0.07);
+  --cds-chart-muted: #c3c2b7;
+  --cds-chart-axis: #c3c2b7;
+  --cds-chart-reference: #898781;
+  --cds-surface-popover: #ffffff;
+  --cds-border: #d8d7cf;
+  --cds-radius: 8px;
+  --cds-shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --cds-text-secondary: #52514e;
+  --cds-font-size-caption: 12px;
+  --cds-font-size-body: 14px;
+  --cds-font-size-heading: 16px;
+  --cds-font-size-title: 26px;
+  --cds-font-weight-medium: 500;
+  --cds-gap-xs: 4px;
+  --cds-gap-sm: 8px;
+  --cds-gap-md: 12px;
+  --cds-gap-lg: 20px;
+  --cds-gap-xl: 28px;
+  --cds-pad-xs: 4px;
+  --cds-pad-sm: 8px;
+  --cds-pad-md: 12px;
+  --cds-pad-lg: 16px;
+  --cds-dur-slow: 400ms;
+  --cds-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0d0d0d;
+    --color-panel: #1a1a19;
+    --color-fg: #f0efec;
+    --color-fg-muted: #b0afa6;
+    --color-border-line: #2c2c2a;
+    --color-bad: #e66767;
+    --cds-chart-grid: rgba(240, 239, 236, 0.09);
+    --cds-chart-muted: #4a4945;
+    --cds-chart-axis: #383835;
+    --cds-chart-reference: #898781;
+    --cds-surface-popover: #232322;
+    --cds-border: #383835;
+    --cds-shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --cds-text-secondary: #c3c2b7;
+  }
+}
+
+/* un élément masqué le reste, même si une règle de la page lui donne un display (crédit de l'illustration absente) */
+[hidden] { display: none !important; }
+
+html { background: var(--color-bg); }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-anthropic-sans);
+  font-size: var(--cds-font-size-body);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+#dash-root { max-width: 1240px; margin: 0 auto; padding: 4px 20px 40px; box-sizing: border-box; }
+@media (max-width: 36rem) { #dash-root { padding: 4px 12px 32px; } }
+
+/* attente du chargement, comme dans le tableau de bord d'origine */
+.dash-skeleton { background: var(--cds-chart-grid); color: transparent !important; border-radius: 4px; animation: vgc-pulse 1.4s ease-in-out infinite; }
+@keyframes vgc-pulse { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .dash-skeleton { animation: none; } }
+
+/* barre du compte, au-dessus du tableau de bord */
+.vgc-compte {
+  max-width: 1240px; margin: 0 auto; padding: 10px 20px 0; box-sizing: border-box;
+  display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px 16px;
+  font-size: var(--cds-font-size-caption); color: var(--color-fg-muted);
+}
+@media (max-width: 36rem) { .vgc-compte { padding: 8px 12px 0; } }
+.vgc-compte b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.vgc-compte a { color: inherit; }
+.vgc-compte form { margin: 0; }
+.vgc-compte button {
+  font: inherit; color: var(--color-fg); background: var(--color-panel); cursor: pointer;
+  border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 3px 10px;
+}
+.vgc-compte button:hover { border-color: var(--color-fg-muted); }
+
+/* pages de connexion et d'administration */
+.vgc-auth { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; box-sizing: border-box; }
+.vgc-carte {
+  width: 100%; max-width: 22rem; box-sizing: border-box; background: var(--color-panel);
+  border: 1px solid var(--color-border-line); border-radius: 12px; padding: 28px 24px;
+}
+.vgc-carte.vgc-large { max-width: 40rem; }
+.vgc-carte h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+.vgc-carte h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 8px; }
+.vgc-sous { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: 6px 0 18px; line-height: 1.5; }
+.vgc-carte a { color: inherit; }
+.vgc-form { display: grid; gap: 6px; }
+.vgc-form label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: 6px; }
+.vgc-form input {
+  font: inherit; color: var(--color-fg); background: var(--color-bg); padding: 8px 10px;
+  border: 1px solid var(--color-border-line); border-radius: var(--cds-radius);
+}
+.vgc-form input:focus-visible, .vgc-form button:focus-visible, .vgc-compte button:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.vgc-form button {
+  margin-top: 14px; font: inherit; font-weight: var(--cds-font-weight-medium); cursor: pointer;
+  color: var(--color-bg); background: var(--color-fg); border: 0; border-radius: var(--cds-radius); padding: 9px 12px;
+}
+.vgc-erreur {
+  font-size: var(--cds-font-size-caption); margin: 0 0 8px; padding: 8px 10px; border-radius: var(--cds-radius);
+  border: 1px solid var(--color-bad); color: var(--color-fg);
+}
+.vgc-resultat { margin-top: 22px; }
+.vgc-resultat pre {
+  white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; font-size: var(--cds-font-size-caption);
+  background: var(--cds-chart-grid); border-radius: var(--cds-radius); padding: 10px 12px; margin: 0 0 10px;
+}
+.vgc-resultat ol { font-size: var(--cds-font-size-caption); line-height: 1.6; padding-left: 18px; }

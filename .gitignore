@@ -4,3 +4,7 @@ __pycache__/
 .venv/
 *.pbix
 node_modules/
+
+# site : compilation Rust, illustration gardée hors du dépôt public
+site/target/
+site/static/art.js

@@ -1,0 +1,9 @@
+# Image du site (site/Dockerfile) : seuls ces fichiers entrent dans le contexte de construction
+*
+!site/Cargo.toml
+!site/Cargo.lock
+!site/src
+!site/page
+!site/static
+!calculateur/dist
+!data/dashboard
