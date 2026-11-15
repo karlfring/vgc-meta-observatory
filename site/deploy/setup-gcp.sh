@@ -18,11 +18,16 @@ REPO_ID="1411357963"
 DEPLOY="github-deploy@${PROJECT}.iam.gserviceaccount.com"
 RUNTIME="vgc-site@${PROJECT}.iam.gserviceaccount.com"
 
-# Un compte de service tout juste créé met parfois quelques secondes à être connu d'IAM : on réessaie.
+# Jamais de question de gcloud : certaines sorties sont masquées ci-dessous, une question y resterait invisible
+# et le script attendrait une réponse sans rien afficher.
+export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+
+# Un compte de service ou une API tout juste créés mettent parfois quelques secondes à être pris en compte :
+# on réessaie.
 retry() {
   for _ in 1 2 3 4 5; do
     "$@" && return 0
-    echo "  IAM n'a pas encore pris en compte le nouveau compte, nouvel essai dans 10 secondes" >&2
+    echo "  Google Cloud n'a pas encore pris en compte le changement, nouvel essai dans 10 secondes" >&2
     sleep 10
   done
   "$@"
@@ -34,6 +39,11 @@ NUMBER=$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')
 echo "1/6 APIs (Cloud Run, Artifact Registry, Secret Manager, fédération d'identité)"
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com \
   iamcredentials.googleapis.com sts.googleapis.com
+# une API tout juste activée peut mettre une minute à répondre
+for _ in $(seq 1 18); do
+  gcloud artifacts repositories list --location="$REGION" >/dev/null 2>&1 && gcloud secrets list >/dev/null 2>&1 && break
+  sleep 10
+done
 
 echo "2/6 Dépôt d'images, qui ne garde que les trois dernières"
 gcloud artifacts repositories describe vgc --location="$REGION" >/dev/null 2>&1 \
