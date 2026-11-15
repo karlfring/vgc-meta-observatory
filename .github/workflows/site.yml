@@ -87,7 +87,6 @@ jobs:
           USERS: ${{ vars.VGC_USERS }}
           ADMIN: ${{ vars.VGC_ADMIN }}
           ADMIN_PASSWORD: ${{ secrets.VGC_ADMIN_PASSWORD }}
-          SESSION_KEY: ${{ secrets.VGC_SESSION_KEY }}
         run: |
           set -euo pipefail
           # compte de l'administrateur, à partir de son mot de passe gardé dans les secrets du dépôt
@@ -97,10 +96,11 @@ jobs:
             others=$(printf '%s\n' "${USERS:-}" | grep -v "^${first}:" || true)
             USERS=$(printf '%s\n%s\n' "$others" "$line")
           fi
-          # contrôle des comptes, de la clé et des fichiers avant toute publication
-          docker run --rm -e VGC_USERS="${USERS:-}" -e VGC_ADMIN="${ADMIN:-}" -e VGC_SESSION_KEY="${SESSION_KEY:-}" "$IMAGE" check
-          jq -n --arg u "${USERS:-}" --arg a "${ADMIN:-}" --arg k "${SESSION_KEY:-}" \
-            '{VGC_USERS: $u, VGC_ADMIN: $a, VGC_SESSION_KEY: $k}' > "$RUNNER_TEMP/env.yaml"
+          # contrôle des comptes et des fichiers avant toute publication ; la vraie clé des sessions reste dans
+          # Secret Manager (setup-gcp.sh), une clé jetable suffit pour ce contrôle
+          KEY=$(docker run --rm "$IMAGE" new-key)
+          docker run --rm -e VGC_USERS="${USERS:-}" -e VGC_ADMIN="${ADMIN:-}" -e VGC_SESSION_KEY="$KEY" "$IMAGE" check
+          jq -n --arg u "${USERS:-}" --arg a "${ADMIN:-}" '{VGC_USERS: $u, VGC_ADMIN: $a}' > "$RUNNER_TEMP/env.yaml"
 
       - name: Publication de l'image
         run: |
@@ -112,7 +112,7 @@ jobs:
           gcloud run deploy "$SERVICE" --image "$IMAGE" --region "$REGION" --project "$PROJECT" \
             --service-account "vgc-site@$PROJECT.iam.gserviceaccount.com" \
             --allow-unauthenticated --min-instances 0 --max-instances 1 --memory 256Mi --cpu 1 \
-            --env-vars-file "$RUNNER_TEMP/env.yaml" --quiet
+            --env-vars-file "$RUNNER_TEMP/env.yaml" --set-secrets "VGC_SESSION_KEY=vgc-session-key:latest" --quiet
           URL=$(gcloud run services describe "$SERVICE" --region "$REGION" --project "$PROJECT" --format 'value(status.url)')
           echo "Site déployé : $URL" >> "$GITHUB_STEP_SUMMARY"
           rm -f "$RUNNER_TEMP/env.yaml"

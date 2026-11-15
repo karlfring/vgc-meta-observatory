@@ -33,7 +33,7 @@ le palier et l'onglet choisis s'inscrivent dans l'adresse : un lien partagé à 
 
 | Variable | Contenu |
 |---|---|
-| `VGC_SESSION_KEY` | clé des cookies, 32 caractères au moins ; la changer déconnecte tout le monde |
+| `VGC_SESSION_KEY` | clé des cookies, 32 caractères au moins ; la changer déconnecte tout le monde. Sur Cloud Run, elle vient du secret `vgc-session-key` de Secret Manager |
 | `VGC_USERS` | une ligne `pseudo:empreinte` par compte |
 | `VGC_ADMIN` | pseudo(s) qui ont accès à la page Comptes |
 | `PORT` | port d'écoute, fourni par Cloud Run (8080 par défaut) |
@@ -41,22 +41,27 @@ le palier et l'onglet choisis s'inscrivent dans l'adresse : un lien partagé à 
 
 ## Mise en ligne, une seule fois
 
-1. **Un projet Google Cloud avec la facturation activée.** Cloud Run l'exige, mais à l'échelle de quelques amis le
-   service reste dans sa gratuité (2 millions de requêtes, 180 000 vCPU-secondes et 360 000 Gio-secondes par mois).
-   Une alerte de budget à 1 € dans la console permet de dormir tranquille.
+1. **Un projet Google Cloud avec la facturation activée.** Cloud Run l'exige, mais à l'échelle de quelques amis tout
+   reste dans les parts gratuites mensuelles : 2 millions de requêtes, 180 000 vCPU-secondes et 360 000 Gio-secondes
+   pour Cloud Run, 6 versions de secret et 10 000 lectures pour Secret Manager, 0,5 Gio d'images pour Artifact
+   Registry, 1 Gio de trafic sortant vers l'Europe (une visite complète pèse moins de 1 Mo compressée ; au-delà,
+   0,12 $ par Gio). Une alerte de budget à 1 € dans la console permet de dormir tranquille.
 2. **Préparer le projet** dans Cloud Shell (le terminal intégré à la console Google Cloud) :
    ```bash
    git clone https://github.com/karlfring/vgc-meta-observatory && cd vgc-meta-observatory
    bash site/deploy/setup-gcp.sh <id-du-projet>
    ```
-   Le script active les APIs, crée le dépôt d'images, deux comptes de service et la fédération d'identité qui
-   permet à GitHub Actions de déployer sans clé stockée. Il affiche les deux variables à créer ensuite.
+   Le script active les APIs, crée le dépôt d'images, deux comptes de service, la clé des sessions et la
+   fédération d'identité qui permet à GitHub Actions de déployer sans clé stockée. La clé des sessions est tirée au
+   hasard dans Cloud Shell et rangée dans Secret Manager : personne n'a à la taper ni à la voir. Le script affiche
+   les deux variables à créer ensuite.
 3. **Dans GitHub**, Settings, Secrets and variables, Actions :
-   - onglet *Variables* : `GCP_PROJECT_ID` et `GCP_PROJECT_NUMBER` (affichés par le script), `VGC_ADMIN` (ton
-     pseudo) et `VGC_USERS` (vide au départ) ;
-   - onglet *Secrets* : `VGC_SESSION_KEY`, une longue chaîne aléatoire (un générateur de mots de passe convient), et
-     `VGC_ADMIN_PASSWORD`, ton mot de passe, 10 caractères au moins. Le déploiement le transforme en empreinte : il
-     n'apparaît jamais en clair sur le serveur.
+   - onglet *Variables* : `GCP_PROJECT_ID` et `GCP_PROJECT_NUMBER` (affichés par le script), et `VGC_ADMIN`, ton
+     pseudo ;
+   - onglet *Secrets* : `VGC_ADMIN_PASSWORD`, ton mot de passe, 10 caractères au moins. Le déploiement le transforme
+     en empreinte : il n'apparaît jamais en clair sur le serveur.
+
+   La variable `VGC_USERS` n'est utile qu'à partir du premier ami (voir plus bas).
 4. **Onglet Actions, workflow Site, Run workflow.** L'adresse du site s'affiche dans le résumé du déploiement.
 
 Ensuite, le site se redéploie seul : après l'ingestion du 2 de chaque mois, et à chaque modification du site, du
@@ -65,12 +70,19 @@ calculateur ou des données poussée sur `main`.
 ## Ajouter un ami
 
 1. Sur le site, lien **Comptes** (visible des administrateurs) : choisis son pseudo et un mot de passe.
-2. Copie la ligne affichée dans la variable `VGC_USERS`, une ligne par compte.
+2. Copie la ligne affichée dans la variable `VGC_USERS` (à créer la première fois), une ligne par compte.
 3. Relance le workflow Site, puis transmets le mot de passe à ton ami par un canal privé.
 
 Pour changer un mot de passe, remplace la ligne du compte ; pour couper un accès, supprime-la ; dans les deux cas,
-relance le workflow. Les pseudos et les empreintes restent dans les variables du dépôt, jamais dans le code ni dans
-les journaux publics de GitHub Actions.
+relance le workflow. Ton propre compte vient du secret `VGC_ADMIN_PASSWORD` : pour changer ton mot de passe, modifie
+ce secret, puis relance le workflow. Les pseudos et les empreintes restent dans les variables du dépôt, jamais dans le code ni dans les
+journaux publics de GitHub Actions.
+
+Pour déconnecter tout le monde, par exemple si un appareil est perdu, change la clé des sessions dans Cloud Shell,
+puis relance le workflow :
+```bash
+head -c 48 /dev/urandom | base64 -w0 | gcloud secrets versions add vgc-session-key --data-file=-
+```
 
 L'illustration d'en-tête, commandée à @walkozuki, n'est pas dans le dépôt public. Pour l'afficher sur le site, ajoute
 le secret `VGC_ART_WEBP` : l'image au format WebP encodée en base64 (`base64 -w0 illustration.webp`).
