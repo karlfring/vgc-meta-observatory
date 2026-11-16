@@ -36,6 +36,30 @@
 
   #dash-root .ob-pick { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-md); }
   #dash-root .ob-pick select { font: inherit; padding: var(--cds-pad-xs) var(--cds-pad-sm); max-width: 100%; }
+  /* menus avec recherche (searchable) */
+  #dash-root .ob-sr { position: relative; display: inline-flex; min-width: 0; max-width: 100%; }
+  #dash-root .ob-sr[hidden], #dash-root .ob-sr-native { display: none !important; }
+  #dash-root .ob-sr::after { content: ""; position: absolute; right: 9px; top: 50%; margin-top: -2px; border: 4px solid transparent; border-top-color: currentColor; opacity: .55; pointer-events: none; }
+  #dash-root .ob-sr input { font: inherit; width: 100%; min-width: 0; box-sizing: border-box; color: FieldText; background: Field; border: 1px solid color-mix(in srgb, currentColor 40%, transparent); border-radius: 4px; padding: 2px 24px 2px var(--cds-pad-xs); text-overflow: ellipsis; }
+  #dash-root .ob-sr input:disabled { opacity: .6; }
+  #dash-root .ob-sr input::placeholder { color: var(--color-fg-muted); }
+  #dash-root .ob-pick .ob-sr { width: 15rem; }
+  #dash-root .ob-pick .ob-sr input, #dash-root .ob-cp-head .ob-sr input { padding: var(--cds-pad-xs) 26px var(--cds-pad-xs) var(--cds-pad-sm); }
+  #dash-root .ob-cp-head .ob-sr { flex: 1 1 9rem; font-size: var(--cds-font-size-body); }
+  #dash-root .ob-cp-ctrl > .ob-sr:first-child { flex: 1 1 8rem; }
+  #dash-root .ob-cp-move .ob-sr { flex: 1 1 10rem; }
+  #dash-root .ob-sr-list {
+    position: absolute; z-index: 30; top: calc(100% + 2px); left: 0; min-width: 100%; width: max-content; max-width: min(22rem, 90vw); max-height: 17rem; overflow-y: auto;
+    background: var(--cds-surface-popover); color: var(--color-fg); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover);
+    padding: 4px 0; font-size: var(--cds-font-size-caption);
+  }
+  #dash-root .ob-sr-list[hidden] { display: none; }
+  #dash-root .ob-sr-item { display: flex; align-items: center; gap: 6px; padding: 3px var(--cds-pad-sm); cursor: pointer; white-space: nowrap; }
+  #dash-root .ob-sr-item .ob-spr, #dash-root .ob-sr-item .ob-spr-ph { flex: none; }
+  #dash-root .ob-sr-item.ob-sr-active { background: color-mix(in srgb, currentColor 12%, transparent); }
+  #dash-root .ob-sr-item[aria-selected="true"] { font-weight: var(--cds-font-weight-medium); }
+  #dash-root .ob-sr-group { padding: 6px var(--cds-pad-sm) 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--color-fg-muted); }
+  #dash-root .ob-sr-empty { padding: 4px var(--cds-pad-sm); color: var(--color-fg-muted); white-space: normal; }
   #dash-root .ob-id { display: flex; flex-wrap: wrap; gap: var(--cds-gap-lg); align-items: baseline; margin-bottom: var(--cds-gap-md); }
   #dash-root .ob-id-name { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); font-weight: 400; }
   #dash-root .ob-id-stat { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
@@ -916,6 +940,123 @@
     const img = document.createElement('img'); img.className = 'ob-spr'; img.src = uri; img.alt = ''; img.width = px; img.height = px; img.decoding = 'async';
     return img;
   };
+
+  // Menu déroulant avec recherche : on tape quelques lettres au lieu de faire défiler la liste.
+  // Le <select> d'origine reste la source de vérité (masqué) : le code existant continue de lire sa valeur,
+  // d'écouter son événement change et de remplir ses options ; la zone de saisie suit ses changements.
+  let srCount = 0;
+  const srNorm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const srKey = (s) => srNorm(s).replace(/[^a-z0-9]/g, '');
+  function searchable(sel, opts = {}) {
+    if (!sel || sel.dataset.sr) return;
+    sel.dataset.sr = '1';
+    const n = ++srCount, MAX = 80;
+    const proto = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+    const protoIdx = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'selectedIndex');
+    const wrap = document.createElement('span'); wrap.className = 'ob-sr';
+    const input = document.createElement('input');
+    input.type = 'text'; input.id = `${sel.id || `ob-sr-${n}`}-saisie`; input.autocomplete = 'off'; input.spellcheck = false;
+    input.setAttribute('role', 'combobox'); input.setAttribute('aria-autocomplete', 'list'); input.setAttribute('aria-expanded', 'false');
+    if (sel.getAttribute('aria-label')) input.setAttribute('aria-label', sel.getAttribute('aria-label'));
+    input.placeholder = opts.placeholder || 'Tape un nom';
+    const list = document.createElement('div'); list.className = 'ob-sr-list'; list.id = `ob-sr-list-${n}`; list.setAttribute('role', 'listbox'); list.hidden = true;
+    input.setAttribute('aria-controls', list.id);
+    sel.before(wrap); wrap.append(input, list, sel); sel.classList.add('ob-sr-native'); sel.tabIndex = -1;
+    if (sel.id) document.querySelectorAll(`label[for="${sel.id}"]`).forEach((l) => { l.htmlFor = input.id; });
+
+    const current = () => { const o = sel.options[sel.selectedIndex]; return o ? o.text : ''; };
+    const sync = () => {
+      input.disabled = sel.disabled; input.title = sel.title || ''; wrap.hidden = sel.hidden;
+      if (document.activeElement !== input) input.value = current();
+    };
+    Object.defineProperty(sel, 'value', { configurable: true, get() { return proto.get.call(sel); }, set(v) { proto.set.call(sel, v); sync(); } });
+    Object.defineProperty(sel, 'selectedIndex', { configurable: true, get() { return protoIdx.get.call(sel); }, set(v) { protoIdx.set.call(sel, v); sync(); } });
+    new MutationObserver(sync).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'title', 'hidden'] });
+
+    let items = [], active = -1, typed = false;
+    const options = () => [...sel.options].map((o) => ({ v: o.value, t: o.text, g: o.parentElement.tagName === 'OPTGROUP' ? o.parentElement.label : null }));
+    const render = (query) => {
+      const q = srKey(query);
+      let rows;
+      if (!q) rows = options();
+      else {
+        const seen = new Set();
+        rows = options().filter((o) => { if (seen.has(o.v)) return false; seen.add(o.v); return true; })
+          .map((o, idx) => {
+            const k = srKey(o.t), words = srNorm(o.t).split(/[^a-z0-9]+/).filter(Boolean);
+            // 0 : le nom commence par la saisie ; 1 : un mot du nom (et la suite) ; 2 : n'importe où
+            const rank = k.startsWith(q) ? 0 : words.some((w, j) => words.slice(j).join('').startsWith(q)) ? 1 : k.includes(q) ? 2 : -1;
+            return { ...o, rank, idx };
+          })
+          .filter((o) => o.rank >= 0).sort((a, b) => a.rank - b.rank || a.idx - b.idx).map((o) => ({ ...o, g: null }));
+      }
+      const total = rows.length;
+      rows = rows.slice(0, MAX);
+      list.replaceChildren();
+      items = [];
+      let group;
+      rows.forEach((o) => {
+        if (o.g && o.g !== group) { group = o.g; const h = document.createElement('div'); h.className = 'ob-sr-group'; h.setAttribute('role', 'presentation'); h.textContent = o.g; list.append(h); }
+        const it = document.createElement('div');
+        it.className = 'ob-sr-item'; it.id = `${list.id}-${items.length}`; it.setAttribute('role', 'option'); it.dataset.v = o.v;
+        if (o.v === sel.value) it.setAttribute('aria-selected', 'true');
+        if (opts.icons) it.append(sprite(o.v, 24));
+        const t = document.createElement('span'); t.textContent = o.t; it.append(t);
+        list.append(it); items.push(it);
+      });
+      if (!total) { const e = document.createElement('div'); e.className = 'ob-sr-empty'; e.textContent = 'Aucun résultat'; list.append(e); }
+      else if (total > MAX) { const e = document.createElement('div'); e.className = 'ob-sr-empty'; e.textContent = `${total - MAX} autres : continue à taper pour affiner`; list.append(e); }
+      setActive(q ? 0 : Math.max(0, items.findIndex((it) => it.dataset.v === sel.value)));
+    };
+    const setActive = (i) => {
+      if (items[active]) items[active].classList.remove('ob-sr-active');
+      active = items.length ? Math.max(0, Math.min(items.length - 1, i)) : -1;
+      if (items[active]) { items[active].classList.add('ob-sr-active'); input.setAttribute('aria-activedescendant', items[active].id); items[active].scrollIntoView({ block: 'nearest' }); }
+      else input.removeAttribute('aria-activedescendant');
+    };
+    const open = (query) => { render(query); list.hidden = false; input.setAttribute('aria-expanded', 'true'); };
+    const close = () => {
+      list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); typed = false;
+      input.placeholder = opts.placeholder || 'Tape un nom';
+    };
+    const choose = (v) => {
+      close();
+      if (v != null && v !== sel.value) { proto.set.call(sel, v); sel.dispatchEvent(new Event('change', { bubbles: true })); }
+      input.value = current();
+    };
+    // ouvrir la recherche : le champ se vide et le nom actuel passe en texte d'aide ; sans choix, il revient à la fermeture
+    const search = () => {
+      if (input.disabled) return;
+      input.placeholder = current() || opts.placeholder || 'Tape un nom';
+      input.value = '';
+      open('');
+    };
+    const cancel = () => { close(); input.value = current(); };
+
+    input.addEventListener('focus', search);
+    input.addEventListener('mousedown', () => { if (document.activeElement === input && list.hidden) search(); });
+    input.addEventListener('input', () => { typed = true; open(input.value); });
+    input.addEventListener('blur', cancel);
+    input.addEventListener('keydown', (e) => {
+      if (list.hidden && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { search(); return; }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (list.hidden) search(); else setActive(active + (e.key === 'ArrowDown' ? 1 : -1));
+      } else if (e.key === 'PageDown' || e.key === 'PageUp') {
+        if (!list.hidden) { e.preventDefault(); setActive(active + (e.key === 'PageDown' ? 8 : -8)); }
+      } else if (e.key === 'Enter') {
+        if (!list.hidden) { e.preventDefault(); choose(items[active] ? items[active].dataset.v : null); }
+      } else if (e.key === 'Escape') {
+        if (!list.hidden) { e.preventDefault(); cancel(); }
+      } else if (e.key === 'Tab') {
+        if (!list.hidden && typed && items[active]) choose(items[active].dataset.v);
+      }
+    });
+    list.addEventListener('mousedown', (e) => e.preventDefault());
+    list.addEventListener('click', (e) => { const it = e.target.closest('.ob-sr-item'); if (it) choose(it.dataset.v); });
+    sync();
+  }
+
   const selected = () => dash.params().pokemon || 'Rillaboom';
   const PALIERS = [0, 1500, 1630, 1760];
   const selPalier = () => { const v = Number(dash.params().palier); return PALIERS.includes(v) ? v : 1500; };
@@ -1138,6 +1279,7 @@
   // ---------- fiche ----------
   const selectEl = q('#ob-select');
   selectEl.addEventListener('change', () => pick(selectEl.value));
+  searchable(selectEl, { icons: true, placeholder: 'Nom du Pokémon' });
 
   function fillList(el, rows, labelOf, valueOf, color, withSprite) {
     el.replaceChildren();
@@ -1652,7 +1794,7 @@
 
   // trajectoire du Pokémon choisi, aux quatre paliers
   const selectEvo = q('#ob-select-evo');
-  if (selectEvo) selectEvo.addEventListener('change', () => pick(selectEvo.value));
+  if (selectEvo) { selectEvo.addEventListener('change', () => pick(selectEvo.value)); searchable(selectEvo, { icons: true, placeholder: 'Nom du Pokémon' }); }
   function drawEvoSelect(u) {
     if (!selectEvo || u.status !== 'ok') return;
     if (selectEvo.options.length !== u.data.length) selectEvo.replaceChildren(...u.data.map((r) => new Option(r.pokemon, r.pokemon)));
@@ -2018,6 +2160,10 @@
       mbox.append(elt('div', { class: 'ob-cp-move' }, [ui.moves[m], elt('div', { class: 'ob-cp-mopts' }, [critWrap, ui.hitsWrap[m], ui.doubleWrap[m], ui.timesWrap[m]])]));
     }
     box.append(elt('h3', { class: 'ob-cp-sub', text: 'Capacités' }), mbox);
+    // les longues listes se filtrent au clavier
+    searchable(ui.poke, { icons: true, placeholder: 'Nom du Pokémon' });
+    searchable(ui.item, { placeholder: "Nom de l'objet" });
+    ui.moves.forEach((sel) => searchable(sel, { placeholder: 'Nom de la capacité' }));
 
     // modifications : on met à jour l'état puis on relance le calcul
     const S = () => calc.sides[i];
